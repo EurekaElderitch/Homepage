@@ -149,14 +149,17 @@
             <!-- JS Injected -->
         </div>
 
+        <!-- Edit Mode (At bottom of page flow) -->
+        <div class="w-full flex justify-end mt-16 mb-4 px-2">
+            <button id="edit-fab"
+                class="size-8 flex items-center justify-center rounded-full glass-fab text-white shadow-lg shadow-black/10 hover:scale-110 transition-transform active:scale-95 group">
+                <span class="material-symbols-outlined text-[16px] group-[.is-editing]:hidden">edit</span>
+                <span class="material-symbols-outlined text-[16px] hidden group-[.is-editing]:block">check</span>
+            </button>
+        </div>
+
     </main>
 
-    <!-- Edit Mode FAB -->
-    <button id="edit-fab"
-        class="fixed bottom-8 right-8 size-10 flex items-center justify-center rounded-full glass-fab text-white shadow-lg shadow-black/10 hover:scale-110 transition-transform active:scale-95 group">
-        <span class="material-symbols-outlined text-[18px] group-[.is-editing]:hidden">edit</span>
-        <span class="material-symbols-outlined text-[18px] hidden group-[.is-editing]:block">check</span>
-    </button>
 
     <!-- Game Overlay -->
     <div id="game-overlay" class="fixed inset-0 z-[9999] hidden bg-black flex flex-col items-center justify-center">

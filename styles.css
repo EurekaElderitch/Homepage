@@ -375,12 +375,10 @@ body.mecha-mode::before {
         font-size: 16px !important;
     }
 
-    /* FAB adjustment */
+    /* FAB adjustment (Flow mode) */
     #edit-fab {
-        bottom: 1.5rem !important;
-        right: 1.5rem !important;
-        width: 3.5rem !important;
-        height: 3.5rem !important;
+        width: 2rem !important;
+        height: 2rem !important;
     }
 
     /* Clock Adjustment */
