@@ -1,48 +1,56 @@
-# Arcade Dashboard & Firefox Cascade Theme
+# Project Homepage / Dashboard
 
-Dashboard utama yang menggabungkan estetika minimalis dengan fungsionalitas modern, lengkap dengan sinkronisasi cloud yang tangguh.
+A modern, highly responsive personal dashboard designed for efficiency and aesthetics. Built with **Vanilla HTML/CSS/JS** and powered by **Supabase** for real-time data persistence.
 
-## 🚀 Fitur Utama
+![Dashboard Preview](https://img.shields.io/badge/Status-Operational-success)
 
-### 1. Modern Dashboard
-- **Aesthetic Minimalist**: Desain bersih dengan glassmorphism dan tipografi premium.
-- **Dual Theme**: Mendukung Dark Mode (default) dan Light Mode yang nyaman di mata.
-- **Clock & Weather**: Jam digital interaktif dan info cuaca real-time (Open-Meteo).
-- **Personalization**: Foto profil dan nama yang disesuaikan secara otomatis.
+## ✨ Key Features
 
-### 2. Authentication & Data Persistence
-- **Clerk Auth**: Login resmi via Google. Profil Anda (nama & avatar) otomatis tersinkronisasi.
-- **Supabase Database**: Penyimpanan link shortcut yang persisten di cloud.
-- **Cross-Device Sync**: Akses dashboard Anda dari perangkat mana pun dengan data yang sama.
+- **Personalized Experience**: Sign in securely with Google via Supabase Auth. Your profile and shortcuts travel with you across devices.
+- **Dynamic Shortcuts**: Add, edit, and organize your favorite links effectively. Data is synced to the cloud instantly.
+- **Adaptive Interface**: Fully responsive design that scales from desktop setups to mobile viewports.
+  - *Fluid Grid*: Categories adjust automatically.
+  - *Smart Navigation*: Optimized touch controls for mobile users.
+- **Integrated Utilities**:
+  - Live local weather updates.
+  - Real-time digital clock with date tracking.
+  - Fast search bar with Google integration.
 
-### 3. [CLASSIFIED] 📂
-*"Ada kebocoran di dalam grid. Ketikkan rasa lapar yang menghantui sistem untuk memulai pembersihan. Waspadalah terhadap protokol Glitch yang bersembunyi di dalam labirin."*
+## 🛠️ Tech Stack
 
-### 4. Neural Link Synchronization 📡
-*"Status hanyalah topeng. Lima ketukan pada titik pusat akan membuka pandangan sang pilot. Sinkronisasi dimulai sekarang."*
+- **Frontend**: HTML5, Tailwind CSS (CDN), Vanilla JavaScript.
+- **Backend / Auth**: Supabase (PostgreSQL, GoTrue Auth).
+- **Icons**: Material Symbols & Google Fonts (Inter).
 
-## 🛠️ Cara Penggunaan & Setup
+## 🚀 Setup & Installation
 
-### Persiapan API Keys
-Proyek ini membutuhkan API Keys agar fitur Auth dan Database berjalan:
-1.  **Clerk**: Daftarkan aplikasi di [clerk.com](https://clerk.com/) dan ambil `Publishable Key`.
-2.  **Supabase**: Buat project di [supabase.com](https://supabase.com/) dan ambil `URL` serta `Anon Public Key`.
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/yourusername/homepage-new.git
+    cd homepage-new
+    ```
+2.  **Configure Supabase**:
+    -   Create a new project at [supabase.com](https://supabase.com).
+    -   Enable **Google Auth** provider in the Authentication settings.
+    -   Run the following SQL in your Supabase SQL Editor to set up the database:
+        ```sql
+        create table user_profiles (
+          id text primary key,
+          shortcuts jsonb default '[]'::jsonb,
+          victory_hero boolean default false,
+          updated_at timestamp with time zone default now()
+        );
+        alter table user_profiles enable row level security;
+        create policy "Allow all access" on user_profiles for all using (true) with check (true);
+        ```
+3.  **Update API Keys**:
+    -   Open `script.js`.
+    -   Replace `SUPABASE_URL` and `SUPABASE_ANON_KEY` with your project's credentials.
+    -   Update `REDIRECT_URL` in your Supabase Auth settings to match your hosted URL (e.g., `https://your-site.com/` or `http://localhost:3000/`).
 
-### Sinkronisasi Database
-Jalankan script SQL berikut di Editor Supabase Anda:
-```sql
-create table user_profiles (
-  id text primary key,
-  shortcuts jsonb default '[]'::jsonb,
-  victory_hero boolean default false,
-  updated_at timestamp with time zone default now()
-);
-alter table user_profiles enable row level security;
-create policy "Allow all access" on user_profiles for all using (true) with check (true);
-```
-
-### Deployment
-Dashboard ini bisa dijalankan langsung via file `index.html` atau di-host di layanan seperti **GitHub Pages**, **Vercel**, atau **Netlify**.
+4.  **Run**:
+    -   Simply open `index.html` in your browser. No build steps required.
 
 ---
-*Dibuat untuk para penjelajah grid yang mencari estetika dan fungsionalitas.* 👾🦾⚡
+
+> _"Protocol MK-01 is dormant but listening. The signal frequency is 5 Hz."_
