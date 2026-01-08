@@ -1,4 +1,4 @@
-// --- CONFIG ---
+// --- CONFIG (v2.1 - 2026-01-08) ---
 const SUPABASE_URL = "https://wnudtnsirntmgjshnthf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudWR0bnNpcm50bWdqc2hudGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjE1OTgsImV4cCI6MjA4MzQzNzU5OH0.EEu30MQL10mhr-Rdbf7li_yDD1jQkn2g6OXFt8IKI2o";
 
