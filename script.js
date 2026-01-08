@@ -64,14 +64,31 @@ const defaultCategories = [
 ];
 
 // --- STATE ---
-let categories = JSON.parse(localStorage.getItem('dashboardCategories')) || defaultCategories;
+let categories = defaultCategories;
+try {
+    const saved = localStorage.getItem('dashboardCategories');
+    if (saved && saved !== 'undefined') {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            categories = parsed;
+        }
+    }
+} catch (e) {
+    console.warn("Storage Error: Falling back to defaults.", e);
+}
+
 let isEditing = false;
-const grid = document.getElementById('grid-container');
-const editBtn = document.getElementById('edit-fab');
+// Selectors as functions to ensure availability
+const getGrid = () => document.getElementById('grid-container');
+const getEditBtn = () => document.getElementById('edit-fab');
 
 // --- RENDER ---
 function render() {
-    if (!grid) return;
+    const grid = getGrid();
+    if (!grid) {
+        console.error("Critical Error: #grid-container not found in DOM.");
+        return;
+    }
     grid.innerHTML = '';
 
     // Safety check for categories
@@ -190,11 +207,16 @@ async function save() {
     }
 }
 
-editBtn.addEventListener('click', () => {
-    isEditing = !isEditing;
-    document.body.classList.toggle('is-editing', isEditing);
-    render();
-});
+setTimeout(() => {
+    const editBtn = getEditBtn();
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            isEditing = !isEditing;
+            document.body.classList.toggle('is-editing', isEditing);
+            render();
+        });
+    }
+}, 1000);
 
 // --- THEME ---
 const html = document.documentElement;
@@ -213,9 +235,14 @@ function setTheme(isDark) {
 }
 
 // Toggle
-document.getElementById('theme-toggle').addEventListener('click', () => {
-    setTheme(!html.classList.contains('dark'));
-});
+setTimeout(() => {
+    const themeBtn = document.getElementById('theme-toggle');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            setTheme(!html.classList.contains('dark'));
+        });
+    }
+}, 1000);
 
 // Init Theme (Persist or Default to Dark)
 const savedTheme = localStorage.getItem('theme') || 'dark';
