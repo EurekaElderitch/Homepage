@@ -1,0 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1');
+
+/* Tailwind Layers (simulated for vanilla CSS import context if using build tool, 
+   but since we use CDN in HTML, this file mainly holds custom overrides) */
+
+:root {
+    --bg-light: #E6E6E6;
+    /* Tone abu-abu yang diminta */
+    /* Sedikit redup (Off-white) */
+    --bg-dark: #0a0a0b;
+    --dot-light: #d1d1d1;
+    /* Lebih kontras untuk background E6E6E6 */
+    --dot-dark: #262626;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    /* Dotted Background */
+    background-image: radial-gradient(var(--dot-light) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+    height: 100vh;
+    overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark {
+    background-color: var(--bg-dark);
+    color: #f3f4f6;
+    background-image: radial-gradient(var(--dot-dark) 1.5px, transparent 1.5px);
+}
+
+
+/* Scrollbar Hide (Firefox & Chromium) */
+html {
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+body::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Edge */
+}
+
+/* Firefox Specific Corrections */
+@-moz-document url-prefix() {
+
+    /* Ensure fonts look similar to WebKit */
+    body {
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Input Norms */
+    input {
+        color-scheme: light dark;
+        /* Matches system theme for inputs */
+    }
+
+    /* Remove dotted focus ring in Firefox */
+    input:focus,
+    button:focus {
+        outline: none;
+    }
+
+    /* Adjust vertical alignment if needed */
+    .material-symbols-outlined {
+        vertical-align: bottom;
+    }
+}
+
+/* Utilities */
+.tracking-widest-anime {
+    letter-spacing: 0.25em;
+    /* Matches the "SYSTEM ONLINE" tracking */
+}
+
+/* Card Styles */
+.glass-card {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dark .glass-card {
+    background: rgba(17, 17, 17, 0.4);
+}
+
+.card {
+    background: white;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dark .card {
+    background: #111;
+    border-color: #333;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border-color: #e5e7eb;
+}
+
+body.dark .card:hover {
+    border-color: #555;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Search Bar */
+.search-input {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.search-input:focus {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Edit Mode Jiggle */
+body.is-editing .card {
+    border-style: dashed;
+    border-color: #ef4444;
+    animation: jiggle 0.3s ease-in-out infinite;
+}
+
+@keyframes jiggle {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(0.4deg);
+    }
+
+    75% {
+        transform: rotate(-0.4deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+/* Custom Scroll (Invisible) */
+.custom-scroll {
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
+}
+
+.custom-scroll::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari/Edge */
+}
+
+/* Glass FAB */
+.glass-fab {
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body:not(.dark) .glass-fab {
+    background: rgba(255, 255, 255, 0.5) !important;
+    color: #1f2937 !important;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Vertical Separator for Date */
+.date-separator {
+    height: 1px;
+    width: 20px;
+    background-color: #e5e7eb;
+}
+
+body.dark .date-separator {
+    background-color: #333;
+}
+
+/* --- EASTER EGG: GRID EATER --- */
+
+/* Mecha Overdrive Mode */
+body.mecha-mode {
+    --bg-dark: #0a0000;
+    --dot-dark: #330000;
+}
+
+body.mecha-mode .glass-card,
+body.mecha-mode .card,
+body.mecha-mode .search-input {
+    border-color: #ff000033 !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.1);
+}
+
+body.mecha-mode #system-status {
+    color: #ff4444 !important;
+}
+
+body.mecha-mode #status-dot {
+    background-color: #ff0000 !important;
+    box-shadow: 0 0 10px #ff0000;
+}
+
+body.mecha-mode #mecha-hud {
+    opacity: 1;
+}
+
+/* HUD Bar Animations */
+@keyframes bar-pulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+body.mecha-mode #mecha-hud [id^="bar-"] {
+    animation: bar-pulse 2s infinite ease-in-out;
+}
+
+/* Narrative Glitch Effects */
+@keyframes screen-flicker {
+    0% {
+        opacity: 0.97;
+        transform: skew(0.5deg);
+    }
+
+    5% {
+        opacity: 0.95;
+        transform: skew(-0.5deg);
+    }
+
+    10% {
+        opacity: 0.9;
+    }
+
+    15% {
+        opacity: 1;
+        transform: skew(0deg);
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.glitch-active {
+    animation: screen-flicker 0.1s infinite;
+    filter: hue-rotate(90deg) contrast(1.5);
+}
+
+@keyframes terminal-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#terminal-text {
+    text-shadow: 0 0 5px #ff0000;
+    line-height: 1.6;
+}
+
+/* Grid Leak */
+.grid-box {
+    position: absolute;
+    background: black;
+    transform: scale(0);
+    transition: transform 0.4s ease-in-out;
+}
+
+.grid-box.active {
+    transform: scale(1.01);
+}
+
+/* CRT Scanline Effect */
+body.mecha-mode::before {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 999;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+/* Terminal Flicker */
+@keyframes flicker {
+    0% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.9;
+    }
+}
+
+#terminal-overlay p {
+    animation: flicker 0.1s infinite;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+#game-canvas {
+    background: #000;
+    max-width: 90vw;
+    max-height: 70vh;
+    border: 2px solid #333;
+}

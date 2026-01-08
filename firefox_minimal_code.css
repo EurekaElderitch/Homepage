@@ -1,0 +1,237 @@
+/* 
+   MINIMALIST ANIME THEME v11 - FULL GNOME INTEGRATION
+   (User Provided Tabs + User Provided URL Bar + Windows Compatibility Fixes)
+*/
+
+@namespace xul "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+:root {
+    /* --- 1. GLOBAL VARIABLES (Mapped for Windows) --- */
+    --bg-frame: #f3f4f6;
+    --text-primary: #1f2937;
+
+    /* GNOME URL BAR VARIABLES */
+    --gnome-popover-background: #ffffff;
+    --gnome-toolbar-color: #1f2937;
+    --gnome-inactive-urlbar-background: rgba(255, 255, 255, 0.5);
+    --gnome-inactive-headerbar-background: transparent;
+    --gnome-headerbar-button-hover-background: rgba(0, 0, 0, 0.05);
+    --gnome-headerbar-button-active-background: rgba(0, 0, 0, 0.1);
+    --gnome-button-border-color: transparent;
+    --gnome-urlbar-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    /* GNOME TAB VARIABLES (New) */
+    --gnome-tabbar-tab-color: #5f6368;
+    --gnome-tabbar-tab-hover-color: #1f2937;
+    --gnome-tabbar-tab-active-color: #1f2937;
+    --gnome-tabbar-tab-background: transparent;
+    --gnome-tabbar-tab-hover-background: rgba(0, 0, 0, 0.05);
+    --gnome-tabbar-tab-active-background: #ffffff;
+
+    --gnome-inactive-tabbar-tab-color: #9aa0a6;
+    --gnome-inactive-tabbar-tab-active-color: #5f6368;
+    --gnome-inactive-tabbar-tab-background: transparent;
+    --gnome-inactive-tabbar-tab-active-background: rgba(255, 255, 255, 0.6);
+
+    --gnome-button-hover-color: rgba(0, 0, 0, 0.1);
+    --gnome-button-active-color: rgba(0, 0, 0, 0.2);
+    --gnome-tab-attention-icon-color: #3584e4;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-frame: #0a0a0b;
+
+        /* Dark Mode Mappings */
+        --gnome-popover-background: #1f2937;
+        --gnome-toolbar-color: #e5e7eb;
+        --gnome-inactive-urlbar-background: rgba(255, 255, 255, 0.05);
+
+        --gnome-tabbar-tab-color: #9ca3af;
+        --gnome-tabbar-tab-hover-color: #e5e7eb;
+        --gnome-tabbar-tab-active-color: #e5e7eb;
+        --gnome-tabbar-tab-hover-background: rgba(255, 255, 255, 0.1);
+        --gnome-tabbar-tab-active-background: #374151;
+        /* Dark gray active tab */
+
+        --gnome-inactive-tabbar-tab-active-background: #1f2937;
+
+        --gnome-button-hover-color: rgba(255, 255, 255, 0.1);
+        --gnome-button-active-color: rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* --- 2. FRAME CLEANUP --- */
+#navigator-toolbox {
+    background-color: var(--bg-frame) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* --- 3. URL BAR CODE (From previous step) --- */
+#nav-bar {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin-top: 0 !important;
+    padding-top: 4px !important;
+}
+
+#urlbar {
+    --urlbar-height: 32px !important;
+    --urlbar-container-height: 32px !important;
+    --urlbar-toolbar-height: 32px !important;
+    --urlbar-inner-padding: 0 !important;
+    box-shadow: none !important;
+    background: var(--gnome-popover-background) !important;
+    border-radius: 8px !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 360px !important;
+    margin: 4px auto !important;
+}
+
+#urlbar-container,
+#wrapper-urlbar-container {
+    padding: 0 !important;
+}
+
+#urlbar-background {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+}
+
+#urlbar-input {
+    text-align: center !important;
+    font-size: 13px !important;
+    color: var(--gnome-toolbar-color) !important;
+}
+
+#identity-box,
+#tracking-protection-icon-container {
+    width: 0;
+    opacity: 0;
+    transition: 0.2s;
+}
+
+#urlbar:hover #identity-box {
+    width: auto;
+    opacity: 1;
+}
+
+/* --- 4. TABS CODE (User Provided & Patched) --- */
+
+tab>stack {
+    margin: 0 3px !important;
+}
+
+.tabbrowser-tab,
+.tab-background {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 !important;
+    background-image: none !important;
+}
+
+.tabbrowser-tab {
+    margin: 4px 0 0 0 !important;
+    /* Added slight top margin for centering */
+}
+
+/* Colors */
+.tabbrowser-tab:not([visuallyselected="true"], [multiselected]),
+.tabbrowser-tab:-moz-lwtheme {
+    color: var(--gnome-tabbar-tab-color) !important;
+}
+
+.tabbrowser-tab .tab-background:not([selected=true]) {
+    color: var(--gnome-tabbar-tab-active-color) !important;
+}
+
+/* Backgrounds */
+.tab-background {
+    margin: 0 !important;
+    background-color: transparent !important;
+    transition: background 200ms !important;
+}
+
+.tab-background:not([selected=true]) {
+    background: var(--gnome-tabbar-tab-background) !important;
+}
+
+.tab-background:not([selected=true]):-moz-window-inactive {
+    background: var(--gnome-inactive-tabbar-tab-background) !important;
+}
+
+#TabsToolbar .tabbrowser-tab:hover>.tab-stack>.tab-background:not([selected=true]) {
+    background: var(--gnome-tabbar-tab-hover-background) !important;
+}
+
+.tab-background[selected=true] {
+    background: var(--gnome-tabbar-tab-active-background) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    /* Added subtle shadow */
+}
+
+.tab-background[selected=true]:-moz-window-inactive {
+    background: var(--gnome-inactive-tabbar-tab-active-background) !important;
+}
+
+/* Label Colors */
+tab .tab-label {
+    color: var(--gnome-tabbar-tab-color) !important;
+}
+
+tab:hover .tab-label {
+    color: var(--gnome-tabbar-tab-hover-color) !important;
+}
+
+tab[selected] .tab-label {
+    color: var(--gnome-tabbar-tab-active-color) !important;
+    font-weight: 600 !important;
+}
+
+/* Close Button Fixes (Patched for Windows) */
+.tab-close-button {
+    -moz-appearance: none !important;
+    margin-inline-end: 0 !important;
+    border: none !important;
+    box-sizing: content-box;
+    border-radius: 3px !important;
+    /* Use data URI for SVG Close Icon to guarantee no 404 on Windows */
+    list-style-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%235f6368' d='M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+    height: 16px;
+    opacity: .5;
+    padding: 0;
+    width: 16px;
+}
+
+/* Update icon color for dark mode via filter or new SVG? Let's use filter invert */
+@media (prefers-color-scheme: dark) {
+    .tab-close-button {
+        filter: invert(1);
+    }
+}
+
+.tabbrowser-tab>.tab-stack>.tab-content>.tab-close-button {
+    visibility: hidden;
+}
+
+.tabbrowser-tab:hover>.tab-stack>.tab-content>.tab-close-button {
+    visibility: visible;
+}
+
+.tab-line {
+    display: none;
+}
+
+/* Hide separators */
+.tabbrowser-tab::after,
+.tabbrowser-tab::before {
+    display: none !important;
+}

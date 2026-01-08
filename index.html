@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!-- Clerk SDK -->
+    <script async crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_Y3VyaW91cy1lZ3JldC00MC5jbGVyay5hY2NvdW50cy5kZXYk"
+        src="https://curious-egret-40.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"></script>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <title>Arcade Dashboard</title>
+    <link href="styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+        }
+    </script>
+</head>
+
+<body class="dark flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header
+        class="w-full max-w-[1600px] mx-auto px-8 md:px-12 py-8 flex justify-between items-start select-none relative z-50">
+
+        <!-- Left: Status -->
+        <div class="flex flex-col gap-1">
+            <div
+                class="flex items-center gap-1 p-1.5 px-3 rounded-full glass-card border border-gray-200/50 dark:border-gray-800/50 shadow-sm">
+                <span id="status-dot"
+                    class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
+                <span id="system-status"
+                    class="text-[9px] font-bold tracking-[0.2em] text-gray-500 dark:text-gray-400 ml-1">SYSTEM
+                    ONLINE</span>
+                <span id="medal-container" class="hidden">
+                    <span class="text-gray-300 dark:text-gray-700 mx-1">|</span>
+                    <span class="material-symbols-outlined text-[14px] text-amber-400 animate-pulse cursor-pointer"
+                        onclick="showVictoryLog()">military_tech</span>
+                </span>
+                <span class="text-gray-300 dark:text-gray-700 mx-2">|</span>
+                <span class="material-symbols-outlined text-[14px] text-gray-400 dark:text-gray-500"
+                    id="weather-icon">cloud_off</span>
+                <span
+                    class="text-[9px] font-bold tracking-[0.2em] text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                    id="weather-text" onclick="requestLocalWeather()">ENABLE WEATHER</span>
+            </div>
+        </div>
+
+        <!-- Right: Controls -->
+        <div class="flex items-center gap-6">
+            <button id="theme-toggle"
+                class="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-[20px]">dark_mode</span>
+            </button>
+            <button
+                class="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors">
+                <span class="material-symbols-outlined text-[20px]">settings</span>
+            </button>
+            <div class="flex items-center gap-3">
+                <img id="user-avatar" src="" alt="Avatar"
+                    class="w-10 h-10 rounded-full border-2 border-white/10 shadow-lg">
+                <div class="flex flex-col">
+                    <span id="user-name"
+                        class="text-xs font-bold tracking-wider text-gray-900 dark:text-gray-100 uppercase">GUEST</span>
+                    <button id="auth-btn"
+                        class="text-[10px] text-left text-gray-400 hover:text-red-400 transition-colors uppercase font-bold tracking-tighter">Sign
+                        In</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mecha HUD Overlay (Visible in Overdrive Mode) -->
+    <div id="mecha-hud" class="fixed inset-0 pointer-events-none opacity-0 transition-opacity duration-700 z-40">
+        <!-- Left HUD: Reactor/Heat -->
+        <div class="absolute left-8 top-1/2 -translate-y-1/2 flex flex-col gap-8">
+            <div class="flex flex-col gap-2">
+                <span class="text-[8px] font-bold tracking-[0.3em] text-red-500/60 uppercase">Reactor Output</span>
+                <div class="w-1 h-32 bg-gray-800/30 rounded-full relative overflow-hidden">
+                    <div id="bar-reactor"
+                        class="absolute bottom-0 w-full bg-red-500 shadow-[0_0_10px_#ff0000] transition-all duration-1000"
+                        style="height: 75%"></div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <span class="text-[8px] font-bold tracking-[0.3em] text-red-500/60 uppercase">Core Heat</span>
+                <div class="w-1 h-32 bg-gray-800/30 rounded-full relative overflow-hidden">
+                    <div id="bar-heat"
+                        class="absolute bottom-0 w-full bg-orange-500 shadow-[0_0_10px_#ff6600] transition-all duration-300"
+                        style="height: 40%"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Right HUD: Sync Rate/Shield -->
+        <div class="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end gap-8">
+            <div class="flex flex-col items-end gap-2">
+                <span class="text-[8px] font-bold tracking-[0.3em] text-red-500/60 uppercase">Sync Rate</span>
+                <div class="w-48 h-1 bg-gray-800/30 rounded-full relative overflow-hidden">
+                    <div id="bar-sync"
+                        class="absolute left-0 h-full bg-red-500 shadow-[0_0_10px_#ff0000] transition-all duration-1000"
+                        style="width: 98%"></div>
+                </div>
+                <span class="text-[10px] font-mono text-red-400">98.2%</span>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <span class="text-[8px] font-bold tracking-[0.3em] text-red-500/60 uppercase">Neural Link</span>
+                <div class="w-48 h-1 bg-gray-800/30 rounded-full relative overflow-hidden">
+                    <div id="bar-link"
+                        class="absolute left-0 h-full bg-cyan-500 shadow-[0_0_10px_#00ffff] transition-all duration-500"
+                        style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Corner Brackets -->
+        <div class="absolute top-8 left-8 w-12 h-12 border-t-2 border-l-2 border-red-500/30"></div>
+        <div class="absolute top-8 right-8 w-12 h-12 border-t-2 border-r-2 border-red-500/30"></div>
+        <div class="absolute bottom-8 left-8 w-12 h-12 border-b-2 border-l-2 border-red-500/30"></div>
+        <div class="absolute bottom-8 right-8 w-12 h-12 border-b-2 border-r-2 border-red-500/30"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center justify-center w-full max-w-[1000px] mx-auto px-6 pb-12">
+
+        <!-- Clock -->
+        <div class="text-center mb-10">
+            <h1 id="clock"
+                class="text-[5rem] md:text-[7rem] font-light leading-none tracking-tight text-gray-800 dark:text-white font-[200]">
+                09<span class="animate-pulse text-gray-300 mx-1">:</span>41
+            </h1>
+            <div class="flex items-center justify-center gap-6 mt-4">
+                <div class="h-[1px] w-12 bg-gray-200 dark:bg-gray-800"></div>
+                <p id="date" class="text-sm font-bold tracking-[0.3em] text-gray-500 dark:text-gray-400 uppercase">
+                    TUESDAY / OCT 24
+                </p>
+                <div class="h-[1px] w-12 bg-gray-200 dark:bg-gray-800"></div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="w-full max-w-lg mb-16 relative group">
+            <form action="https://www.google.com/search" method="GET" id="search-form">
+                <input type="text" name="q" id="search-input" placeholder="Search..." autocomplete="off"
+                    class="search-input w-full h-12 pl-8 pr-12 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111] text-gray-800 dark:text-gray-200 text-xs focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 transition-all placeholder-gray-400">
+                <span
+                    class="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-gray-400 pointer-events-none">mic</span>
+            </form>
+        </div>
+
+        <!-- Links Grid -->
+        <div id="grid-container" class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <!-- JS Injected -->
+        </div>
+
+    </main>
+
+    <!-- Edit Mode FAB -->
+    <button id="edit-fab"
+        class="fixed bottom-8 right-8 size-10 flex items-center justify-center rounded-full glass-fab text-white shadow-lg shadow-black/10 hover:scale-110 transition-transform active:scale-95 group">
+        <span class="material-symbols-outlined text-[18px] group-[.is-editing]:hidden">edit</span>
+        <span class="material-symbols-outlined text-[18px] hidden group-[.is-editing]:block">check</span>
+    </button>
+
+    <!-- Game Overlay -->
+    <div id="game-overlay" class="fixed inset-0 z-[9999] hidden bg-black flex flex-col items-center justify-center">
+        <div id="grid-leak-container" class="absolute inset-0 pointer-events-none"></div>
+        <div id="terminal-overlay"
+            class="z-10 text-green-500 font-mono text-lg text-center opacity-0 transition-opacity duration-500">
+            <p id="terminal-text"></p>
+        </div>
+        <canvas id="game-canvas" class="z-20 hidden"></canvas>
+        <div id="game-ui"
+            class="absolute top-8 w-full px-12 flex justify-between text-white font-mono text-sm hidden z-30">
+            <div>LEVEL: <span id="game-level">1</span></div>
+            <div>BITS: <span id="game-score">0</span> / <span id="game-total">0</span></div>
+            <div>ESC TO ABORT</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

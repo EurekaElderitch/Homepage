@@ -1,0 +1,262 @@
+/* 
+   MINIMALIST ANIME THEME v16 - SPLIT BEHAVIOR
+   (Static Search | Popup Tabs | Hover Window Controls)
+*/
+
+@namespace xul "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
+/* --- 1. SETTINGS --- */
+:root {
+    --navbar-height: 38px;
+    --tab-height: 28px;
+    /* Even smaller */
+    --popup-transition: 0.15s ease-out;
+}
+
+/* --- 2. COLORS (Refined Gray/White Tone) --- */
+:root {
+    --bg-global: transparent;
+    --bg-search: rgba(255, 255, 255, 0.6);
+    /* Lighter Glass */
+    --bg-popup: rgba(248, 249, 250, 0.75);
+    /* Tone Abu/Putih */
+    --bg-hover-ctrl: rgba(229, 231, 235, 0.8);
+    --text-main: #374151;
+    --blur-val: blur(16px);
+    /* Stronger Glass */
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-search: rgba(18, 18, 18, 0.6);
+        --bg-popup: rgba(24, 24, 24, 0.7);
+        --bg-hover-ctrl: rgba(51, 51, 51, 0.9);
+        --text-main: #e5e7eb;
+    }
+}
+
+/* Glass Effect logic */
+#urlbar-background,
+#TabsToolbar,
+.titlebar-buttonbox-container {
+    backdrop-filter: var(--blur-val) !important;
+}
+
+/* --- 3. GLOBAL TOOLBOX CONTAINER --- */
+/* Must be visible effectively to hold the static search bar */
+#navigator-toolbox {
+    background: transparent !important;
+    border: none !important;
+    position: relative !important;
+    z-index: 100 !important;
+    padding-top: 2px !important;
+    /* Beri sedikit ruang di atas */
+}
+
+/* --- 4. STATIC SEARCH BAR (Minimalist Glass) --- */
+#nav-bar {
+    display: flex !important;
+    justify-content: center !important;
+    height: var(--navbar-height) !important;
+    background: transparent !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 6px !important;
+    /* Jarak agar tidak menempel ke konten web */
+}
+
+/* The Pill */
+#urlbar-container {
+    width: 45% !important;
+    /* Slightly narrower */
+    min-width: 320px !important;
+    margin: 0 auto !important;
+}
+
+#urlbar-background {
+    background: var(--bg-search) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 99px !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important;
+}
+
+#urlbar-input {
+    text-align: center !important;
+    font-size: 11px !important;
+    /* Smaller text */
+    font-weight: 500 !important;
+    color: var(--text-main) !important;
+}
+
+#urlbar[focused="true"] #urlbar-input {
+    text-align: left !important;
+}
+
+/* --- TRICK: Friendly URL Alias for Local Files --- */
+
+/* Sembunyikan teks URL asli saat tidak sedang diklik (fokus) */
+#urlbar:not([focused]) #urlbar-input {
+    color: transparent !important;
+}
+
+/* Munculkan teks pengganti "HOMEPAGE" di tengah */
+#urlbar:not([focused]) .urlbar-input-box::before {
+    content: "HOMEPAGE" !important;
+    position: absolute !important;
+    width: 100% !important;
+    text-align: center !important;
+    color: var(--text-main) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2em !important;
+    opacity: 0.5 !important;
+}
+
+/* --- 5. POPUP TABS (Refined Center Layout) --- */
+#TabsToolbar {
+    /* Absolute positioning to float it 'under' without pushing content */
+    position: absolute !important;
+    top: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(-5px) scale(0.98) !important;
+    width: 60% !important;
+    min-width: 360px !important;
+    z-index: 10 !important;
+
+    background: var(--bg-popup) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+
+    /* Hiding Logic */
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all var(--popup-transition) !important;
+
+    /* Layout */
+    overflow: visible !important;
+    /* Penting agar shadow/kapsul tidak terpotong */
+    height: auto !important;
+    min-height: calc(var(--tab-height) + 12px) !important;
+    /* Tambah space vertikal */
+    padding: 6px 10px !important;
+    margin-top: 4px !important;
+}
+
+/* TRIGGER: Reveal Tabs when hovering Toolbox (Nav bar area) or Tabs themselves */
+#navigator-toolbox:hover #TabsToolbar,
+#TabsToolbar:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+/* Tab Styling (Capsule Style) */
+.tabbrowser-tab {
+    margin-inline: 4px !important;
+    /* More space between capsules */
+    height: var(--tab-height) !important;
+}
+
+.tab-background {
+    border-radius: 99px !important;
+    /* CAPSULE SHAPE */
+    background: transparent !important;
+    border: none !important;
+}
+
+.tabbrowser-tab[selected="true"] .tab-background {
+    background: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.dark .tabbrowser-tab[selected="true"] .tab-background {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.tab-content {
+    padding-inline: 12px !important;
+    /* Space for the pill ends */
+}
+
+.tab-label {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    color: var(--text-main) !important;
+}
+
+
+.tab-line {
+    display: none !important;
+}
+
+
+/* --- 6. WINDOW CONTROLS (Popup Top-Right) --- */
+/* The container for min/max/close */
+.titlebar-buttonbox-container {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 9999 !important;
+
+    /* Hidden State */
+    opacity: 0 !important;
+    transform: translateY(-50%) !important;
+    transition: all 0.2s ease !important;
+
+    background: var(--bg-popup) !important;
+    /* Background to make readable */
+    border-radius: 0 0 0 12px !important;
+    padding: 0 6px 4px 6px !important;
+    box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* TRIGGER: Hover Top Right Corner Area */
+/* We create a psuedo element or just hover the box directly if it has size.
+   Problem: If opacity is 0 and transform moved away, difficult to hover.
+   Fix: Keep it transparent but clickable/hoverable? Or use a larger invisible trigger?
+*/
+
+/* Better: Make it always "there" but transparent, become visible on hover */
+.titlebar-buttonbox-container {
+    transform: none !important;
+    /* Stay in place */
+    opacity: 0 !important;
+    height: 14px !important;
+    /* Small trigger stripe */
+    overflow: hidden !important;
+}
+
+.titlebar-buttonbox-container:hover {
+    opacity: 1 !important;
+    height: auto !important;
+    /* Reveal full buttons */
+    padding-bottom: 8px !important;
+}
+
+/* Button Styling */
+.titlebar-button {
+    padding: 6px 12px !important;
+}
+
+.titlebar-max,
+.titlebar-min,
+.titlebar-close {
+    border-radius: 4px !important;
+}
+
+.titlebar-close:hover {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+/* HIDE CLUTTER */
+#identity-box,
+#tracking-protection-icon-container,
+#fxa-toolbar-menu-button,
+#unified-extensions-button,
+#nav-bar [id^="extension"] {
+    display: none !important;
+}
