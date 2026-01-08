@@ -1,6 +1,6 @@
 # Arcade Dashboard & Firefox Cascade Theme
 
-Dashboard utama yang menggabungkan estetika minimalis dengan fungsionalitas modern, lengkap dengan fitur tersembunyi "System Breach" dan sinkronisasi cloud.
+Dashboard utama yang menggabungkan estetika minimalis dengan fungsionalitas modern, lengkap dengan sinkronisasi cloud yang tangguh.
 
 ## 🚀 Fitur Utama
 
@@ -10,19 +10,16 @@ Dashboard utama yang menggabungkan estetika minimalis dengan fungsionalitas mode
 - **Clock & Weather**: Jam digital interaktif dan info cuaca real-time (Open-Meteo).
 - **Personalization**: Foto profil dan nama yang disesuaikan secara otomatis.
 
-### 2. Authentication & Data Persistence (Main Course)
+### 2. Authentication & Data Persistence
 - **Clerk Auth**: Login resmi via Google. Profil Anda (nama & avatar) otomatis tersinkronisasi.
-- **Supabase Database**: Penyimpanan link shortcut yang persisten. Data Anda tersimpan aman di cloud, bukan lagi di browser.
+- **Supabase Database**: Penyimpanan link shortcut yang persisten di cloud.
 - **Cross-Device Sync**: Akses dashboard Anda dari perangkat mana pun dengan data yang sama.
 
-### 3. "Grid Eater" Easter Egg
-- **System Breach Transitions**: Sekuens pembuka naratif ala hacker saat masuk ke game.
-- **Arcade Gameplay**: Mini-game berburu data bits di dalam labirin cyber.
-- **Optimized AI**: Musuh "Glitch" dengan logika pengejaran *Target-Tile* yang cerdas dan efisien.
-- **Narrative Outro**: Sekuens pemulihan sistem setelah menang atau keluar dari grid.
+### 3. [CLASSIFIED] 📂
+*"Ada kebocoran di dalam grid. Ketikkan rasa lapar yang menghantui sistem untuk memulai pembersihan. Waspadalah terhadap protokol Glitch yang bersembunyi di dalam labirin."*
 
-### 4. Mecha Overdrive HUD
-- **System Overdrive**: UI kokpit mecha pilot anime dengan status bar dinamis (Reactor, Heat, Sync Rate) yang muncul melalui trigger rahasia pada titik status.
+### 4. Neural Link Synchronization 📡
+*"Status hanyalah topeng. Lima ketukan pada titik pusat akan membuka pandangan sang pilot. Sinkronisasi dimulai sekarang."*
 
 ## 🛠️ Cara Penggunaan & Setup
 
@@ -46,14 +43,6 @@ create policy "Allow all access" on user_profiles for all using (true) with chec
 
 ### Deployment
 Dashboard ini bisa dijalankan langsung via file `index.html` atau di-host di layanan seperti **GitHub Pages**, **Vercel**, atau **Netlify**.
-
-## 🎨 Teknologi
-- **Core**: Vanilla HTML5, JavaScript (ES6+), CSS3
-- **Styling**: Tailwind CSS (CDN)
-- **Auth**: Clerk JS SDK
-- **Database**: Supabase JS Client
-- **Game Engine**: HTML5 Canvas
-- **Icons**: Material Symbols Outlined (Google Fonts)
 
 ---
 *Dibuat untuk para penjelajah grid yang mencari estetika dan fungsionalitas.* 👾🦾⚡

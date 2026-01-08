@@ -1,7 +1,18 @@
 // --- CONFIG ---
 const SUPABASE_URL = "https://wnudtnsirntmgjshnthf.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_IUTbAM3zNg9_iWLsJIzdGA_sW9BkLPk";
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudWR0bnNpcm50bWdqc2hudGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjE1OTgsImV4cCI6MjA4MzQzNzU5OH0.EEu30MQL10mhr-Rdbf7li_yDD1jQkn2g6OXFt8IKI2o";
+
+let supabase = null;
+try {
+    if (window.supabase) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("Supabase Client Initialized.");
+    } else {
+        console.warn("Supabase SDK not found on window. Persistence disabled.");
+    }
+} catch (e) {
+    console.error("Supabase Init Error:", e);
+}
 
 const defaultCategories = [
     {
@@ -60,7 +71,15 @@ const editBtn = document.getElementById('edit-fab');
 
 // --- RENDER ---
 function render() {
+    if (!grid) return;
     grid.innerHTML = '';
+
+    // Safety check for categories
+    if (!Array.isArray(categories) || categories.length === 0) {
+        console.warn("Categories data invalid, falling back to defaults.");
+        categories = defaultCategories;
+    }
+
     categories.forEach((cat, cIdx) => {
         // Col Structure
         const col = document.createElement('div');
@@ -858,54 +877,71 @@ async function initAuth() {
     const userName = document.getElementById('user-name');
     const userAvatar = document.getElementById('user-avatar');
 
-    // Wait for Clerk to be available on window
+    if (!authBtn || !userName || !userAvatar) return;
+
+    // Wait for Clerk to load
     const checkClerk = setInterval(async () => {
         if (window.Clerk) {
             clearInterval(checkClerk);
+            console.log("Clerk SDK Found. Loading...");
             try {
                 await window.Clerk.load();
+                console.log("Clerk Loaded. Session:", window.Clerk.session ? "Active" : "None");
 
                 if (window.Clerk.user) {
-                    // Logged In
                     userName.innerText = window.Clerk.user.fullName || "USER";
                     userAvatar.src = window.Clerk.user.imageUrl;
                     authBtn.innerText = "SIGN OUT";
                     authBtn.onclick = () => window.Clerk.signOut();
 
-                    // Sync to localStorage for legacy features if needed
                     localStorage.setItem('userName', userName.innerText);
 
                     // --- SUPABASE SYNC ---
                     if (supabase) {
-                        const { data, error } = await supabase
-                            .from('user_profiles')
-                            .select('shortcuts, victory_hero')
-                            .eq('id', window.Clerk.user.id)
-                            .single();
+                        try {
+                            const { data, error } = await supabase
+                                .from('user_profiles')
+                                .select('shortcuts, victory_hero')
+                                .eq('id', window.Clerk.user.id)
+                                .single();
 
-                        if (data && data.shortcuts) {
-                            categories = data.shortcuts;
-                            render();
-                        }
-                        if (data && data.victory_hero) {
-                            localStorage.setItem('gridEaterHero', 'true');
-                            showMedal();
+                            if (error && error.code !== 'PGRST116') {
+                                console.error("Supabase Sync Error:", error.message);
+                            }
+
+                            if (data && Array.isArray(data.shortcuts)) {
+                                console.log("Syncing shortcuts from Supabase...");
+                                categories = data.shortcuts;
+                                render();
+                            }
+                            if (data && data.victory_hero) {
+                                localStorage.setItem('gridEaterHero', 'true');
+                                showMedal();
+                            }
+                        } catch (syncErr) {
+                            console.error("Supabase Sync Exception:", syncErr);
                         }
                     }
                 } else {
-                    // Not Logged In
                     userName.innerText = "GUEST";
                     userAvatar.src = `https://ui-avatars.com/api/?name=Guest&background=random&color=fff`;
                     authBtn.innerText = "SIGN IN";
                     authBtn.onclick = () => window.Clerk.openSignIn();
                 }
             } catch (err) {
-                console.error("Clerk Load Error:", err);
+                console.error("Clerk Load Exception:", err);
             }
         }
-    }, 100);
+    }, 500);
 }
 
+// Global Error Catch to prevent UI freeze
+window.onerror = function (msg, url, line) {
+    console.error("Global Error:", msg, "at", url, ":", line);
+    return false;
+};
+
 // Final Init
+render();
 initAuth();
 showMedal();
