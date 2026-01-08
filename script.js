@@ -191,12 +191,13 @@ async function save() {
     render();
 
     // Sync to Supabase if logged in
-    if (window.Clerk && window.Clerk.user && supabase) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && session.user) {
         try {
             const { error } = await supabase
                 .from('user_profiles')
                 .upsert({
-                    id: window.Clerk.user.id,
+                    id: session.user.id,
                     shortcuts: categories,
                     updated_at: new Date()
                 });
@@ -795,12 +796,13 @@ function winGame() {
         localStorage.setItem('victoryDate', new Date().toLocaleDateString());
 
         // Sync Victory to Supabase
-        if (window.Clerk && window.Clerk.user && supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
             try {
                 await supabase
                     .from('user_profiles')
                     .upsert({
-                        id: window.Clerk.user.id,
+                        id: session.user.id,
                         victory_hero: true,
                         updated_at: new Date()
                     });
@@ -898,7 +900,7 @@ function stopMechaHUD() {
     }
 }
 
-// --- CLERK AUTHENTICATION ---
+// --- SUPABASE AUTHENTICATION ---
 async function initAuth() {
     const authBtn = document.getElementById('auth-btn');
     const userName = document.getElementById('user-name');
@@ -906,60 +908,64 @@ async function initAuth() {
 
     if (!authBtn || !userName || !userAvatar) return;
 
-    // Wait for Clerk to load
-    const checkClerk = setInterval(async () => {
-        if (window.Clerk) {
-            clearInterval(checkClerk);
-            console.log("Clerk SDK Found. Loading...");
+    // Listen for Auth Changes
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log("Auth Event:", event);
+
+        if (session && session.user) {
+            // User Logged In
+            const user = session.user;
+            userName.innerText = user.user_metadata.full_name || user.email.split('@')[0];
+            userAvatar.src = user.user_metadata.avatar_url || `https://ui-avatars.com/api/?name=${userName.innerText}&background=random&color=fff`;
+
+            authBtn.innerText = "SIGN OUT";
+            authBtn.onclick = async () => {
+                await supabase.auth.signOut();
+                window.location.reload();
+            };
+
+            localStorage.setItem('userName', userName.innerText);
+
+            // Sync Shortcuts from Supabase
             try {
-                await window.Clerk.load();
-                console.log("Clerk Loaded. Session:", window.Clerk.session ? "Active" : "None");
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('shortcuts, victory_hero')
+                    .eq('id', user.id)
+                    .single();
 
-                if (window.Clerk.user) {
-                    userName.innerText = window.Clerk.user.fullName || "USER";
-                    userAvatar.src = window.Clerk.user.imageUrl;
-                    authBtn.innerText = "SIGN OUT";
-                    authBtn.onclick = () => window.Clerk.signOut();
-
-                    localStorage.setItem('userName', userName.innerText);
-
-                    // --- SUPABASE SYNC ---
-                    if (supabase) {
-                        try {
-                            const { data, error } = await supabase
-                                .from('user_profiles')
-                                .select('shortcuts, victory_hero')
-                                .eq('id', window.Clerk.user.id)
-                                .single();
-
-                            if (error && error.code !== 'PGRST116') {
-                                console.error("Supabase Sync Error:", error.message);
-                            }
-
-                            if (data && Array.isArray(data.shortcuts)) {
-                                console.log("Syncing shortcuts from Supabase...");
-                                categories = data.shortcuts;
-                                render();
-                            }
-                            if (data && data.victory_hero) {
-                                localStorage.setItem('gridEaterHero', 'true');
-                                showMedal();
-                            }
-                        } catch (syncErr) {
-                            console.error("Supabase Sync Exception:", syncErr);
-                        }
-                    }
-                } else {
-                    userName.innerText = "GUEST";
-                    userAvatar.src = `https://ui-avatars.com/api/?name=Guest&background=random&color=fff`;
-                    authBtn.innerText = "SIGN IN";
-                    authBtn.onclick = () => window.Clerk.openSignIn();
+                if (error && error.code !== 'PGRST116') {
+                    console.error("Supabase Sync Error:", error.message);
                 }
-            } catch (err) {
-                console.error("Clerk Load Exception:", err);
+
+                if (data && Array.isArray(data.shortcuts)) {
+                    console.log("Syncing shortcuts from Supabase...");
+                    categories = data.shortcuts;
+                    render();
+                }
+                if (data && data.victory_hero) {
+                    localStorage.setItem('gridEaterHero', 'true');
+                    showMedal();
+                }
+            } catch (syncErr) {
+                console.error("Supabase Sync Exception:", syncErr);
             }
+        } else {
+            // User Logged Out
+            userName.innerText = "GUEST";
+            userAvatar.src = `https://ui-avatars.com/api/?name=Guest&background=random&color=fff`;
+            authBtn.innerText = "SIGN IN";
+            authBtn.onclick = async () => {
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname
+                    }
+                });
+                if (error) console.error("Login Error:", error.message);
+            };
         }
-    }, 500);
+    });
 }
 
 // Global Error Catch to prevent UI freeze
