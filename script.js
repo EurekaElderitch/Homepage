@@ -902,31 +902,63 @@ function stopMechaHUD() {
 
 // --- SUPABASE AUTHENTICATION ---
 async function initAuth() {
+    console.log("Checking Auth Components...");
     const authBtn = document.getElementById('auth-btn');
     const userName = document.getElementById('user-name');
     const userAvatar = document.getElementById('user-avatar');
 
-    if (!authBtn || !userName || !userAvatar) return;
+    if (!authBtn || !userName || !userAvatar) {
+        console.error("Auth UI Elements missing!");
+        return;
+    }
+
+    if (!supabase) {
+        console.error("Supabase Client not initialized! Check API keys and SDK source.");
+        authBtn.innerText = "SUPABASE ERROR";
+        return;
+    }
+
+    console.log("Supabase Auth Initializing...");
+
+    // Function to handle Google Sign-In
+    const startLogin = async () => {
+        console.log("Starting OAuth flow...");
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin + window.location.pathname
+            }
+        });
+        if (error) {
+            console.error("Sign-in Error:", error.message);
+            alert("Login Error: " + error.message);
+        }
+    };
+
+    // Attach initial click handler just in case
+    authBtn.onclick = startLogin;
 
     // Listen for Auth Changes
     supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth Event:", event);
+        console.log("Supabase Auth Event:", event, session ? "Session Active" : "No Session");
 
         if (session && session.user) {
-            // User Logged In
             const user = session.user;
+            console.log("User Logged In:", user.email);
+
             userName.innerText = user.user_metadata.full_name || user.email.split('@')[0];
             userAvatar.src = user.user_metadata.avatar_url || `https://ui-avatars.com/api/?name=${userName.innerText}&background=random&color=fff`;
 
             authBtn.innerText = "SIGN OUT";
             authBtn.onclick = async () => {
+                console.log("Signing out...");
                 await supabase.auth.signOut();
                 window.location.reload();
             };
 
             localStorage.setItem('userName', userName.innerText);
 
-            // Sync Shortcuts from Supabase
+            // Sync Shortcuts
             try {
                 const { data, error } = await supabase
                     .from('user_profiles')
@@ -935,11 +967,11 @@ async function initAuth() {
                     .single();
 
                 if (error && error.code !== 'PGRST116') {
-                    console.error("Supabase Sync Error:", error.message);
+                    console.error("Supabase Data Fetch Error:", error.message);
                 }
 
                 if (data && Array.isArray(data.shortcuts)) {
-                    console.log("Syncing shortcuts from Supabase...");
+                    console.log("Shortcuts synced from cloud.");
                     categories = data.shortcuts;
                     render();
                 }
@@ -947,23 +979,15 @@ async function initAuth() {
                     localStorage.setItem('gridEaterHero', 'true');
                     showMedal();
                 }
-            } catch (syncErr) {
-                console.error("Supabase Sync Exception:", syncErr);
+            } catch (err) {
+                console.error("Sync Exception:", err);
             }
         } else {
-            // User Logged Out
+            console.log("Setting UI to Guest mode.");
             userName.innerText = "GUEST";
             userAvatar.src = `https://ui-avatars.com/api/?name=Guest&background=random&color=fff`;
             authBtn.innerText = "SIGN IN";
-            authBtn.onclick = async () => {
-                const { error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin + window.location.pathname
-                    }
-                });
-                if (error) console.error("Login Error:", error.message);
-            };
+            authBtn.onclick = startLogin;
         }
     });
 }
