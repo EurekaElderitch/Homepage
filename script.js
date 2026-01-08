@@ -2,10 +2,10 @@
 const SUPABASE_URL = "https://wnudtnsirntmgjshnthf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudWR0bnNpcm50bWdqc2hudGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjE1OTgsImV4cCI6MjA4MzQzNzU5OH0.EEu30MQL10mhr-Rdbf7li_yDD1jQkn2g6OXFt8IKI2o";
 
-let supabase = null;
+let db = null;
 try {
     if (window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("Supabase Client Initialized.");
     } else {
         console.warn("Supabase SDK not found on window. Persistence disabled.");
@@ -191,10 +191,10 @@ async function save() {
     render();
 
     // Sync to Supabase if logged in
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await db.auth.getSession();
     if (session && session.user) {
         try {
-            const { error } = await supabase
+            const { error } = await db
                 .from('user_profiles')
                 .upsert({
                     id: session.user.id,
@@ -796,10 +796,10 @@ function winGame() {
         localStorage.setItem('victoryDate', new Date().toLocaleDateString());
 
         // Sync Victory to Supabase
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await db.auth.getSession();
         if (session && session.user) {
             try {
-                await supabase
+                await db
                     .from('user_profiles')
                     .upsert({
                         id: session.user.id,
@@ -912,9 +912,9 @@ async function initAuth() {
         return;
     }
 
-    if (!supabase) {
+    if (!db) {
         console.error("Supabase Client not initialized! Check API keys and SDK source.");
-        authBtn.innerText = "SUPABASE ERROR";
+        authBtn.innerText = "DB ERROR";
         return;
     }
 
@@ -923,7 +923,7 @@ async function initAuth() {
     // Function to handle Google Sign-In
     const startLogin = async () => {
         console.log("Starting OAuth flow...");
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { error } = await db.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: window.location.origin + window.location.pathname
@@ -939,7 +939,7 @@ async function initAuth() {
     authBtn.onclick = startLogin;
 
     // Listen for Auth Changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    db.auth.onAuthStateChange(async (event, session) => {
         console.log("Supabase Auth Event:", event, session ? "Session Active" : "No Session");
 
         if (session && session.user) {
@@ -952,7 +952,7 @@ async function initAuth() {
             authBtn.innerText = "SIGN OUT";
             authBtn.onclick = async () => {
                 console.log("Signing out...");
-                await supabase.auth.signOut();
+                await db.auth.signOut();
                 window.location.reload();
             };
 
@@ -960,7 +960,7 @@ async function initAuth() {
 
             // Sync Shortcuts
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('user_profiles')
                     .select('shortcuts, victory_hero')
                     .eq('id', user.id)
