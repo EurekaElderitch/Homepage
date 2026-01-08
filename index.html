@@ -68,7 +68,15 @@
         </div>
     </header>
 
-    <!-- Mecha HUD Overlay (Visible in Overdrive Mode) -->
+    <!-- Mecha Cinematic Backgrounds -->
+    <div id="mecha-bg"
+        class="fixed inset-0 pointer-events-none opacity-0 transition-opacity duration-1000 z-30 overflow-hidden">
+        <img src="mecha_cockpit_view_1767879958972.png" alt="Mecha Cockpit"
+            class="absolute inset-0 w-full h-full object-cover scale-110 blur-[0.5px]">
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)]"></div>
+    </div>
+
     <!-- Mecha HUD Overlay (Visible in Overdrive Mode) -->
     <div id="mecha-hud"
         class="fixed inset-0 pointer-events-none opacity-0 transition-opacity duration-700 z-40 overflow-hidden">

@@ -209,8 +209,27 @@ body.mecha-mode #status-dot {
     box-shadow: 0 0 10px #ff0000;
 }
 
-body.mecha-mode #mecha-hud {
+body.mecha-mode #mecha-hud,
+body.mecha-mode #mecha-bg {
     opacity: 1;
+}
+
+body.mecha-mode #mecha-bg img {
+    animation: zoom-pulse 20s infinite alternate ease-in-out;
+}
+
+@keyframes zoom-pulse {
+    from {
+        transform: scale(1.1);
+    }
+
+    to {
+        transform: scale(1.2);
+    }
+}
+
+body.mecha-mode #mecha-hud {
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
 }
 
 /* HUD Bar Animations */
@@ -223,6 +242,16 @@ body.mecha-mode #mecha-hud {
 
     50% {
         opacity: 1;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
     }
 }
 
