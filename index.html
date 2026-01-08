@@ -23,7 +23,7 @@
 
     <!-- Header -->
     <header
-        class="w-full max-w-[1600px] mx-auto px-8 md:px-12 py-8 flex justify-between items-start select-none relative z-50">
+        class="w-full max-w-[1600px] mx-auto px-4 md:px-12 py-6 md:py-8 flex justify-between items-center md:items-start select-none relative z-50">
 
         <!-- Left: Status -->
         <div class="flex flex-col gap-1">
@@ -49,23 +49,19 @@
         </div>
 
         <!-- Right: Controls -->
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-3 md:gap-6">
             <button id="theme-toggle"
                 class="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors">
-                <span class="material-symbols-outlined text-[20px]">dark_mode</span>
+                <span class="material-symbols-outlined text-[18px] md:text-[20px]">dark_mode</span>
             </button>
-            <button
-                class="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors">
-                <span class="material-symbols-outlined text-[20px]">settings</span>
-            </button>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 md:gap-3">
                 <img id="user-avatar" src="" alt="Avatar"
-                    class="w-10 h-10 rounded-full border-2 border-white/10 shadow-lg">
+                    class="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white/10 shadow-lg">
                 <div class="flex flex-col">
                     <span id="user-name"
-                        class="text-xs font-bold tracking-wider text-gray-900 dark:text-gray-100 uppercase">GUEST</span>
+                        class="text-[10px] md:text-xs font-bold tracking-wider text-gray-900 dark:text-gray-100 uppercase">GUEST</span>
                     <button id="auth-btn"
-                        class="text-[10px] text-left text-gray-400 hover:text-red-400 transition-colors uppercase font-bold tracking-tighter">Sign
+                        class="text-[8px] md:text-[10px] text-left text-gray-400 hover:text-red-400 transition-colors uppercase font-bold tracking-tighter">Sign
                         In</button>
                 </div>
             </div>
@@ -124,9 +120,9 @@
     <main class="flex-grow flex flex-col items-center justify-center w-full max-w-[1000px] mx-auto px-6 pb-12">
 
         <!-- Clock -->
-        <div class="text-center mb-10">
+        <div class="text-center mb-8 md:mb-10">
             <h1 id="clock"
-                class="text-[5rem] md:text-[7rem] font-light leading-none tracking-tight text-gray-800 dark:text-white font-[200]">
+                class="text-[4rem] md:text-[7rem] font-light leading-none tracking-tight text-gray-800 dark:text-white font-[200]">
                 09<span class="animate-pulse text-gray-300 mx-1">:</span>41
             </h1>
             <div class="flex items-center justify-center gap-6 mt-4">
@@ -139,12 +135,12 @@
         </div>
 
         <!-- Search -->
-        <div class="w-full max-w-lg mb-16 relative group">
+        <div class="w-full max-w-lg mb-12 md:mb-16 relative group px-4 md:px-0">
             <form action="https://www.google.com/search" method="GET" id="search-form">
                 <input type="text" name="q" id="search-input" placeholder="Search..." autocomplete="off"
-                    class="search-input w-full h-12 pl-8 pr-12 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111] text-gray-800 dark:text-gray-200 text-xs focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 transition-all placeholder-gray-400">
+                    class="search-input w-full h-11 md:h-12 pl-8 pr-12 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111] text-gray-800 dark:text-gray-200 text-xs focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 transition-all placeholder-gray-400">
                 <span
-                    class="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-[18px] text-gray-400 pointer-events-none">mic</span>
+                    class="material-symbols-outlined absolute right-8 md:right-5 top-1/2 -translate-y-1/2 text-[18px] text-gray-400 pointer-events-none">mic</span>
             </form>
         </div>
 

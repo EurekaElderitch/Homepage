@@ -331,3 +331,58 @@ body.mecha-mode::before {
     max-height: 70vh;
     border: 2px solid #333;
 }
+
+/* --- MOBILE OPTIMIZATION --- */
+@media (max-width: 640px) {
+
+    /* Reduce body padding */
+    header {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+
+    /* Smaller text in status dot */
+    #system-status {
+        font-size: 7px !important;
+        letter-spacing: 0.15em !important;
+    }
+
+    /* Grid layout stability */
+    #grid-container {
+        gap: 1.5rem !important;
+        padding-bottom: 4rem;
+        /* Space for FAB */
+    }
+
+    /* Card Padding */
+    .card {
+        padding: 0.6rem 0.75rem !important;
+    }
+
+    .card .material-symbols-outlined {
+        font-size: 16px !important;
+    }
+
+    /* FAB adjustment */
+    #edit-fab {
+        bottom: 1.5rem !important;
+        right: 1.5rem !important;
+        width: 3.5rem !important;
+        height: 3.5rem !important;
+    }
+
+    /* Clock Adjustment */
+    #clock {
+        margin-bottom: 0px !important;
+    }
+
+    #date {
+        font-size: 10px !important;
+        letter-spacing: 0.2em !important;
+    }
+
+    /* HUD for vertical screens */
+    #mecha-hud [class*="absolute"] {
+        transform: scale(0.8);
+    }
+}
