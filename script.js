@@ -394,8 +394,14 @@ function initSystemBreach() {
             setTimeout(() => {
                 document.body.classList.remove('glitch-active');
                 termOverlay.style.opacity = '0';
-                document.getElementById('game-overlay').classList.add('hidden'); // HIDE OLD OVERLAY
-                setTimeout(() => SysDef.init(), 500); // Launch System Defense
+
+                // Launch Game FIRST (behind the black screen)
+                SysDef.init();
+
+                // Then remove the black screen after a tiny delay to prevent dashboard flash
+                setTimeout(() => {
+                    document.getElementById('game-overlay').classList.add('hidden');
+                }, 300);
             }, 1000);
         });
     }, 1500);
@@ -511,71 +517,76 @@ const SysDef = {
     gameLoop() {
         if (!this.State.running || this.State.paused) return;
 
-        const ctx = this.ctx;
-        ctx.fillStyle = '#050510';
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        try {
+            const ctx = this.ctx;
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Path Glow
-        ctx.shadowBlur = 15; ctx.shadowColor = '#0ff';
-        ctx.strokeStyle = '#001a1a'; ctx.lineWidth = 40; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.beginPath(); ctx.moveTo(this.path[0].x, this.path[0].y); this.path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+            // Path Glow
+            ctx.shadowBlur = 15; ctx.shadowColor = '#0ff';
+            ctx.strokeStyle = '#001a1a'; ctx.lineWidth = 40; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(this.path[0].x, this.path[0].y); this.path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
 
-        // Active Path
-        ctx.shadowBlur = 5; ctx.strokeStyle = '#003333'; ctx.lineWidth = 4;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+            // Active Path
+            ctx.shadowBlur = 5; ctx.strokeStyle = '#003333'; ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
 
-        // Spawning Logic
-        if (this.State.enemies.length === 0) {
-            if (this.State.wave === 10 && !this.State.hasShownWave10Msg) {
-                this.triggerWave10Choice();
-                this.State.hasShownWave10Msg = true;
-                return;
+            // Spawning Logic
+            if (this.State.enemies.length === 0) {
+                if (this.State.wave === 10 && !this.State.hasShownWave10Msg) {
+                    this.triggerWave10Choice();
+                    this.State.hasShownWave10Msg = true;
+                    return;
+                }
+
+                this.State.wave++;
+                this.saveGame();
+                const count = 5 + this.State.wave * 2;
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => { if (this.State.running && !this.State.paused) this.State.enemies.push(new this.Enemy(this.State.wave)); }, i * Math.max(200, 600 - this.State.wave * 10));
+                }
             }
 
-            this.State.wave++;
-            this.saveGame();
-            const count = 5 + this.State.wave * 2;
-            for (let i = 0; i < count; i++) {
-                setTimeout(() => { if (this.State.running && !this.State.paused) this.State.enemies.push(new this.Enemy(this.State.wave)); }, i * Math.max(200, 600 - this.State.wave * 10));
-            }
+            // Entities Update
+            this.State.towers.forEach(t => { t.update(); t.draw(ctx); });
+            this.State.bullets = this.State.bullets.filter(b => { if (b.update()) return false; b.draw(ctx); return true; });
+            this.State.enemies = this.State.enemies.filter(e => {
+                if (e.health <= 0) {
+                    e.die(); this.State.money += e.reward; this.State.meta.totalKills++;
+                    return false;
+                }
+                if (e.targetIdx >= this.path.length) {
+                    this.State.health -= 10; // Lose integrity
+                    this.State.health = Math.max(0, this.State.health);
+                    return false;
+                }
+                e.update(); e.draw(ctx); return true;
+            });
+
+            // VFX
+            this.State.pulses = this.State.pulses.filter(p => {
+                ctx.strokeStyle = p.c; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.life), 0, Math.PI * 2); ctx.stroke();
+                p.life -= 0.04; return p.life > 0;
+            });
+            this.State.floatingTexts = this.State.floatingTexts.filter(f => {
+                ctx.fillStyle = `rgba(255,255,255,${f.life})`; ctx.font = '10px monospace'; ctx.fillText(f.text, f.x, f.y - (1 - f.life) * 20);
+                f.life -= 0.02; return f.life > 0;
+            });
+
+            // UI Updates
+            document.getElementById('moneyEl').innerText = Math.floor(this.State.money);
+            document.getElementById('healthEl').innerText = Math.floor(this.State.health) + '%';
+            document.getElementById('waveEl').innerText = this.State.wave;
+            document.getElementById('skillNuke').disabled = this.State.money < 500;
+
+            if (this.State.health <= 0) this.endGame("SYSTEM COMPROMISED");
+
+            ctx.globalAlpha = 1;
+        } catch (e) {
+            console.error("SysDef Game Loop Error:", e);
         }
 
-        // Entities Update
-        this.State.towers.forEach(t => { t.update(); t.draw(ctx); });
-        this.State.bullets = this.State.bullets.filter(b => { if (b.update()) return false; b.draw(ctx); return true; });
-        this.State.enemies = this.State.enemies.filter(e => {
-            if (e.health <= 0) {
-                e.die(); this.State.money += e.reward; this.State.meta.totalKills++;
-                return false;
-            }
-            if (e.targetIdx >= this.path.length) {
-                this.State.health -= 10; // Lose integrity
-                this.State.health = Math.max(0, this.State.health);
-                return false;
-            }
-            e.update(); e.draw(ctx); return true;
-        });
-
-        // VFX
-        this.State.pulses = this.State.pulses.filter(p => {
-            ctx.strokeStyle = p.c; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.life), 0, Math.PI * 2); ctx.stroke();
-            p.life -= 0.04; return p.life > 0;
-        });
-        this.State.floatingTexts = this.State.floatingTexts.filter(f => {
-            ctx.fillStyle = `rgba(255,255,255,${f.life})`; ctx.font = '10px monospace'; ctx.fillText(f.text, f.x, f.y - (1 - f.life) * 20);
-            f.life -= 0.02; return f.life > 0;
-        });
-
-        // UI Updates
-        document.getElementById('moneyEl').innerText = Math.floor(this.State.money);
-        document.getElementById('healthEl').innerText = Math.floor(this.State.health) + '%';
-        document.getElementById('waveEl').innerText = this.State.wave;
-        document.getElementById('skillNuke').disabled = this.State.money < 500;
-
-        if (this.State.health <= 0) this.endGame("SYSTEM COMPROMISED");
-
-        ctx.globalAlpha = 1;
         requestAnimationFrame(() => this.gameLoop());
     },
 
@@ -726,6 +737,9 @@ const SysDef = {
             this.speed = isElite ? 15 : 10;
         }
         update() {
+            // Safety: If target dead or undefined, remove bullet
+            if (!this.target || this.target.health <= 0) return true;
+
             const dx = this.target.x - this.x, dy = this.target.y - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < this.speed) {
