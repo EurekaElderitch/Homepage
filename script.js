@@ -394,6 +394,7 @@ function initSystemBreach() {
             setTimeout(() => {
                 document.body.classList.remove('glitch-active');
                 termOverlay.style.opacity = '0';
+                document.getElementById('game-overlay').classList.add('hidden'); // HIDE OLD OVERLAY
                 setTimeout(() => SysDef.init(), 500); // Launch System Defense
             }, 1000);
         });
