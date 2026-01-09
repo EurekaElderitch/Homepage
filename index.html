@@ -261,7 +261,129 @@
         </div>
     </div>
 
-    <script src="script.js?v=2"></script>
+    <!-- System Defense Protocol (Hidden Game) -->
+    <div id="defense-protocol"
+        class="fixed inset-0 z-50 bg-[#050505] hidden flex flex-col items-center justify-center font-mono">
+        <!-- Notifikasi Wave 10 -->
+        <div id="waveNotify"
+            class="hidden absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 bg-cyan-950/90 border-4 double border-cyan-400 p-8 text-center z-[200] shadow-[0_0_30px_rgba(0,255,255,0.3)] pointer-events-none transition-opacity duration-500">
+            <h2 class="text-cyan-400 mb-4 text-lg tracking-widest">THREAT MITIGATED</h2>
+            <p class="text-[10px] leading-relaxed mb-6 text-cyan-100">INTRUSION WAVE 10 HALTED.<br>CHOOSE NEXT PROTOCOL:
+            </p>
+            <div class="flex justify-center gap-4 pointer-events-auto">
+                <button onclick="SysDef.continuePlaying()"
+                    class="m-2 p-3 text-[10px] cursor-pointer border-2 border-cyan-500 text-cyan-500 bg-cyan-950/50 hover:bg-cyan-900">MAINTAIN
+                    FIREWALL</button>
+                <button onclick="SysDef.finishGame()"
+                    class="m-2 p-3 text-[10px] cursor-pointer border-2 border-yellow-500 text-yellow-500 bg-yellow-950/50 hover:bg-yellow-900">SYSTEM
+                    REBOOT</button>
+            </div>
+        </div>
+
+        <div
+            class="hud absolute top-5 left-5 right-5 flex justify-between pointer-events-none z-10 text-[10px] font-bold">
+            <div class="bg-black/80 p-2 border-l-2 border-red-500 text-red-500 shadow-[0_0_10px_rgba(255,0,0,0.2)]">DATA
+                INTEGRITY: <span id="healthEl" class="text-white">100%</span></div>
+            <div class="bg-black/80 p-2 border-l-2 border-cyan-500 text-cyan-500 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+                INTRUSION WAVE: <span id="waveEl" class="text-white">1</span></div>
+            <div
+                class="bg-black/80 p-2 border-l-2 border-yellow-500 text-yellow-400 shadow-[0_0_10px_rgba(255,255,0,0.2)]">
+                ENCRYPTION KEYS: <span id="moneyEl" class="text-white">800</span></div>
+        </div>
+
+        <div id="startScreen"
+            class="ui-overlay absolute inset-0 bg-black/90 flex flex-col justify-center items-center z-[100] text-center">
+            <h1 class="text-3xl mb-10 text-cyan-400 drop-shadow-[0_0_10px_rgba(0,255,255,0.8)] tracking-widest">SYSTEM
+                DEFENSE PROTOCOL</h1>
+            <div id="metaInfo" class="text-[10px] mb-6 text-gray-400 leading-relaxed font-mono"></div>
+            <div class="mb-6 flex flex-col gap-2">
+                <button onclick="SysDef.upgradeMeta('startMoney')"
+                    class="text-[8px] bg-yellow-900/30 p-2 border border-yellow-600 text-yellow-500 hover:bg-yellow-900/50 transition-colors">UPGRADE
+                    INIT KEYS: 100 PACKETS</button>
+                <button onclick="SysDef.upgradeMeta('coreHealth')"
+                    class="text-[8px] bg-red-900/30 p-2 border border-red-600 text-red-500 hover:bg-red-900/50 transition-colors">UPGRADE
+                    DATA INTEGRITY: 150 PACKETS</button>
+            </div>
+            <button onclick="SysDef.startGame()"
+                class="bg-cyan-950/80 border-2 border-cyan-400 text-cyan-400 py-4 px-10 mb-4 hover:bg-cyan-900 hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all">INITIALIZE
+                DEFENSE</button>
+            <button onclick="SysDef.exitGame()" class="text-[10px] text-gray-500 hover:text-white mt-4">ABORT
+                PROTOCOL</button>
+        </div>
+
+        <div id="endScreen"
+            class="ui-overlay hidden absolute inset-0 bg-black/95 flex flex-col justify-center items-center z-[100] text-center">
+            <h2 id="endStatus" class="text-3xl mb-6 text-red-500 tracking-widest">SYSTEM CRITICAL</h2>
+            <div id="finalScore" class="text-[12px] mb-10 text-cyan-400 font-mono"></div>
+            <button onclick="SysDef.resetGameUI()"
+                class="bg-cyan-900 border-2 border-cyan-400 text-cyan-400 py-4 px-10 hover:bg-cyan-800">REBOOT
+                SYSTEM</button>
+            <button onclick="SysDef.exitGame()" class="mt-6 text-xs text-gray-500 hover:text-white">RETURN TO
+                DASHBOARD</button>
+        </div>
+
+        <canvas id="gameCanvas"
+            class="block bg-[#050510] border border-cyan-900/30 shadow-[0_0_50px_rgba(0,0,0,0.5)]"></canvas>
+
+        <div id="controlPanel"
+            class="ui-panel hidden absolute bottom-0 left-0 w-full bg-[#050510]/95 border-t border-cyan-500/50 p-4 flex flex-col items-center z-10 backdrop-blur-md">
+            <div class="flex gap-4 w-full justify-center mb-3 items-end">
+                <div class="flex gap-2">
+                    <div class="tower-btn cursor-pointer bg-black/50 border border-gray-700 p-2 w-24 text-center hover:border-cyan-500 transition-colors group"
+                        id="btn-laser" onclick="SysDef.selectTower('laser')">
+                        <div class="text-[8px] text-cyan-300 group-hover:text-cyan-100">PACKET FILTER</div>
+                        <div class="text-[8px] text-yellow-500 mt-1">80 KEYS</div>
+                    </div>
+                    <div class="tower-btn cursor-pointer bg-black/50 border border-gray-700 p-2 w-24 text-center hover:border-green-500 transition-colors group"
+                        id="btn-slow" onclick="SysDef.selectTower('slow')">
+                        <div class="text-[8px] text-green-300 group-hover:text-green-100">LATENCY SPIKE</div>
+                        <div class="text-[8px] text-yellow-500 mt-1">120 KEYS</div>
+                    </div>
+                    <div class="tower-btn cursor-pointer bg-black/50 border border-gray-700 p-2 w-24 text-center hover:border-fuchsia-500 transition-colors group"
+                        id="btn-multi" onclick="SysDef.selectTower('multi')">
+                        <div class="text-[8px] text-fuchsia-300 group-hover:text-fuchsia-100">DDOS PULSE</div>
+                        <div class="text-[8px] text-yellow-500 mt-1">200 KEYS</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-1 items-center ml-4 pl-4 border-l border-gray-800">
+                    <span class="text-[6px] text-red-500 mb-1 tracking-widest">ROOT ACCESS</span>
+                    <button id="skillNuke" onclick="SysDef.useNuke()"
+                        class="bg-red-950/30 border border-red-600 text-red-500 px-3 py-2 text-[8px] hover:bg-red-900/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all">SYSTEM
+                        PURGE (500)</button>
+                </div>
+            </div>
+
+            <div id="upgradeBox"
+                class="hidden flex flex-col gap-2 w-full max-w-lg bg-black/80 p-2 border border-cyan-900/50 rounded">
+                <div class="flex justify-between items-center mb-1 px-1">
+                    <span class="text-[10px] text-cyan-400 font-bold" id="towerInfo">NODE LV.1</span>
+                    <select id="targetMode" onchange="SysDef.changeTargetMode()"
+                        class="bg-black text-[8px] border border-cyan-900 text-cyan-400 px-2 py-1 outline-none">
+                        <option value="first">PRIORITY: FIRST</option>
+                        <option value="strongest">PRIORITY: STRONG</option>
+                        <option value="closest">PRIORITY: CLOSE</option>
+                    </select>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="SysDef.applyUpgrade('speed')" id="upSpeed"
+                        class="flex-1 bg-cyan-950/30 border border-cyan-700 text-cyan-400 text-[8px] p-1 hover:bg-cyan-900 transition-colors">THROUGHPUT</button>
+                    <button onclick="SysDef.applyUpgrade('power')" id="upPower"
+                        class="flex-1 bg-cyan-950/30 border border-cyan-700 text-cyan-400 text-[8px] p-1 hover:bg-cyan-900 transition-colors">INTEGRITY</button>
+                    <button onclick="SysDef.applyUpgrade('range')" id="upRange"
+                        class="flex-1 bg-cyan-950/30 border border-cyan-700 text-cyan-400 text-[8px] p-1 hover:bg-cyan-900 transition-colors">COVERAGE</button>
+                    <button onclick="SysDef.prestigeTower()" id="prestigeBtn"
+                        class="flex-1 bg-purple-950/30 border border-purple-600 text-purple-400 text-[8px] p-1 hover:bg-purple-900 animate-pulse hidden">OVERCLOCK</button>
+                    <button onclick="SysDef.sellSelected()"
+                        class="px-3 bg-red-950/30 border border-red-800 text-red-500 text-[8px] hover:bg-red-900">DECOMMISSION</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js?v=3"></script>
 </body>
 
 </html>
