@@ -663,8 +663,10 @@ const SysDef = {
             ctx.beginPath(); ctx.arc(this.x, this.y, this.isBoss ? 16 : 10, 0, Math.PI * 2); ctx.fill();
             ctx.shadowBlur = 0;
             // Health bar
-            ctx.fillStyle = '#111'; ctx.fillRect(this.x - 10, this.y - 18, 20, 3);
             ctx.fillStyle = '#0f0'; ctx.fillRect(this.x - 10, this.y - 18, (this.health / this.maxHealth) * 20, 3);
+        }
+        takeDamage(dmg) {
+            this.health -= dmg;
         }
         die() {
             // Particles?
