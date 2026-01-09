@@ -475,6 +475,13 @@ const SysDef = {
             this.State.mouse.x = e.clientX - r.left;
             this.State.mouse.y = e.clientY - r.top;
         });
+
+        // Global Key Handler
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.State.running) {
+                this.exitGame();
+            }
+        });
     },
 
     resize() {
@@ -546,6 +553,11 @@ const SysDef = {
                 for (let i = 0; i < count; i++) {
                     setTimeout(() => { if (this.State.running && !this.State.paused) this.State.enemies.push(new this.Enemy(this.State.wave)); }, i * Math.max(200, 600 - this.State.wave * 10));
                 }
+            }
+
+            // Passive Income (Mining Logic)
+            if (this.State.running && !this.State.paused && Math.random() < 0.01) { // Approx once per 1.5s at 60fps
+                this.State.money += 1 + Math.floor(this.State.wave * 0.5);
             }
 
             // Entities Update
@@ -818,6 +830,25 @@ const SysDef = {
             this.State.money -= 500;
             this.State.enemies.forEach(e => e.takeDamage(1000));
             this.State.pulses.push({ x: this.canvas.width / 2, y: this.canvas.height / 2, r: 1000, c: '#f00', life: 1 });
+        }
+    },
+
+    sellSelected() {
+        const t = this.State.selectedPlacedTower;
+        if (t) {
+            // Refund 70% of base cost
+            const type = t.type;
+            const refund = Math.floor(this.towerTypes[type].cost * 0.7);
+            this.State.money += refund;
+
+            // Remove from towers array
+            this.State.towers = this.State.towers.filter(tower => tower !== t);
+
+            // Particles/Effect?
+            this.State.floatingTexts.push({ x: t.x, y: t.y, text: `+${refund}`, life: 1 });
+
+            this.State.selectedPlacedTower = null;
+            this.updateUI();
         }
     },
 
