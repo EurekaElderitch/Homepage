@@ -556,8 +556,8 @@ const SysDef = {
             }
 
             // Passive Income (Mining Logic)
-            if (this.State.running && !this.State.paused && Math.random() < 0.01) { // Approx once per 1.5s at 60fps
-                this.State.money += 1 + Math.floor(this.State.wave * 0.5);
+            if (this.State.running && !this.State.paused && Math.random() < 0.02) { // Buffed: 2% chance (~1.2 hits/sec)
+                this.State.money += 5 + this.State.wave; // Buffed: Base 5 + Wave (was 1 + 0.5*Wave)
             }
 
             // Entities Update
@@ -565,7 +565,10 @@ const SysDef = {
             this.State.bullets = this.State.bullets.filter(b => { if (b.update()) return false; b.draw(ctx); return true; });
             this.State.enemies = this.State.enemies.filter(e => {
                 if (e.health <= 0) {
-                    e.die(); this.State.money += e.reward; this.State.meta.totalKills++;
+                    e.die();
+                    // Buffed Reward: Base 35 + 3*Wave (was 25 + 2*Wave)
+                    this.State.money += e.reward + 10 + this.State.wave;
+                    this.State.meta.totalKills++;
                     return false;
                 }
                 if (e.targetIdx >= this.path.length) {
