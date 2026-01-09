@@ -416,218 +416,463 @@ function playNarrative(el, lines, index, cb) {
     }
 }
 
+// --- GAME ENGINE: SYSTEM DEFENSE PROTOCOL (TD) ---
+const SysDef = {
+    canvas: null,
+    ctx: null,
+    path: [{ x: 0, y: 300 }, { x: 250, y: 300 }, { x: 250, y: 100 }, { x: 550, y: 100 }, { x: 550, y: 450 }, { x: 150, y: 450 }, { x: 150, y: 550 }, { x: 800, y: 550 }],
+    towerTypes: {
+        laser: { cost: 80, range: 120, damage: 5, color: '#0ff', type: 'laser' },
+        slow: { cost: 120, range: 100, damage: 1, color: '#0f0', type: 'slow' },
+        multi: { cost: 200, range: 150, damage: 15, color: '#f0f', type: 'multi' }
+    },
 
+    State: {
+        money: 800,
+        health: 100,
+        wave: 0,
+        enemies: [],
+        towers: [],
+        bullets: [],
+        floatingTexts: [],
+        pulses: [],
+        particles: [],
+        running: false,
+        paused: false,
+        selectedTowerType: null,
+        selectedPlacedTower: null,
+        mouse: { x: 0, y: 0 },
+        gridSize: 40,
+        meta: { highWave: 1, totalKills: 0, startMoneyLv: 0, coreHealthLv: 0 },
+        mapColor: '#050510',
+        hasShownWave10Msg: false
+    },
 
-if (valid.length > 0) {
-    const pR = Math.floor(player.y / TILE_SIZE);
-    const pC = Math.floor(player.x / TILE_SIZE);
+    init() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        document.body.classList.add('defense-mode');
+        document.getElementById('defense-protocol').classList.remove('hidden');
+        document.getElementById('startScreen').classList.remove('hidden');
+        document.getElementById('endScreen').classList.add('hidden');
+        document.getElementById('controlPanel').classList.add('hidden');
 
-    // Pick neighbor closest to Target Tile (Player)
-    valid.sort((a, b) => {
-        const distA = Math.hypot(pR - a.r, pC - a.c);
-        const distB = Math.hypot(pR - b.r, pC - b.c);
-        return distA - distB;
-    });
-    e.dir = valid[0].dir;
-} else {
-    // If stuck (rare), allow reverse
-    e.dir = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' }[e.dir];
-}
-        }
+        this.loadSave();
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
 
-// Apply movement
-if (e.dir === 'up') e.y -= e.speed;
-if (e.dir === 'down') e.y += e.speed;
-if (e.dir === 'left') e.x -= e.speed;
-if (e.dir === 'right') e.x += e.speed;
+        // Input Handlers
+        this.canvas.addEventListener('pointerdown', (e) => this.handleInput(e));
+        this.canvas.addEventListener('pointermove', (e) => {
+            const r = this.canvas.getBoundingClientRect();
+            this.State.mouse.x = e.clientX - r.left;
+            this.State.mouse.y = e.clientY - r.top;
+        });
+    },
 
-// Collision with Player
-const distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
-if (distToPlayer < 12) gameOver();
-    });
+    resize() {
+        if (!this.canvas) return;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight; // Fullscreen game
+    },
 
-// Win Condition
-if (dots.length === 0) {
-    if (currentLevel < 3) {
-        currentLevel++;
-        initLevel(currentLevel);
-    } else {
-        winGame();
-    }
-}
-}
+    loadSave() {
+        const data = localStorage.getItem("sysdef_meta_v1");
+        if (data) this.State.meta = JSON.parse(data);
+        this.updateMetaDisplay();
+    },
 
-function draw() {
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    updateMetaDisplay() {
+        document.getElementById('metaInfo').innerHTML = `MAX WAVE: ${this.State.meta.highWave}<br>PACKETS INTERCEPTED: ${this.State.meta.totalKills}`;
+    },
 
-    // Draw Walls
-    ctx.fillStyle = '#1e3a8a'; // Deep blue walls
-    walls.forEach(w => {
-        ctx.fillRect(w.x, w.y, w.w, w.h);
-        ctx.strokeStyle = '#3b82f6'; // Lighter blue border
-        ctx.strokeRect(w.x, w.y, w.w, w.h);
-    });
+    saveGame() {
+        this.State.meta.highWave = Math.max(this.State.meta.highWave, this.State.wave);
+        localStorage.setItem("sysdef_meta_v1", JSON.stringify(this.State.meta));
+        this.updateMetaDisplay();
+    },
 
-    // Player
-    ctx.fillStyle = '#FFD700';
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-    ctx.fill();
+    startGame() {
+        this.State.money = 800 + (this.State.meta.startMoneyLv * 100);
+        this.State.health = 100 + (this.State.meta.coreHealthLv * 25);
+        this.State.wave = 0;
+        this.State.hasShownWave10Msg = false;
+        this.State.enemies = []; this.State.towers = []; this.State.bullets = [];
+        this.State.paused = false;
 
-    // Dots
-    ctx.fillStyle = '#FFF';
-    dots.forEach(d => {
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, 2, 0, Math.PI * 2);
-        ctx.fill();
-    });
+        document.getElementById('startScreen').classList.add('hidden');
+        document.getElementById('endScreen').classList.add('hidden');
+        document.getElementById('controlPanel').classList.remove('hidden');
+        this.State.running = true;
+        this.gameLoop();
+    },
 
-    // Enemies
-    ctx.fillStyle = '#FF4444';
-    enemies.forEach(e => {
-        ctx.fillRect(e.x - 7, e.y - 7, 14, 14);
-    });
-}
+    gameLoop() {
+        if (!this.State.running || this.State.paused) return;
 
-function abortGame() {
-    gameActive = false;
-    const termOverlay = document.getElementById('terminal-overlay');
-    const termText = document.getElementById('terminal-text');
+        const ctx = this.ctx;
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    termOverlay.style.opacity = '1';
-    termText.innerHTML = '';
+        // Path Glow
+        ctx.shadowBlur = 15; ctx.shadowColor = '#0ff';
+        ctx.strokeStyle = '#001a1a'; ctx.lineWidth = 40; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(this.path[0].x, this.path[0].y); this.path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
 
-    const narrative = [
-        "EMERGENCY ABORT SIGNAL DETECTED.",
-        "STABILIZING CORE...",
-        "DISCONNECTING FROM GRID..."
-    ];
+        // Active Path
+        ctx.shadowBlur = 5; ctx.strokeStyle = '#003333'; ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
 
-    playNarrative(termText, narrative, 0, () => {
-        exitTransition("ABORTED");
-    });
-}
+        // Spawning Logic
+        if (this.State.enemies.length === 0) {
+            if (this.State.wave === 10 && !this.State.hasShownWave10Msg) {
+                this.triggerWave10Choice();
+                this.State.hasShownWave10Msg = true;
+                return;
+            }
 
-function gameOver() {
-    document.body.classList.add('glitch-active');
-    const termOverlay = document.getElementById('terminal-overlay');
-    const termText = document.getElementById('terminal-text');
-
-    termText.innerHTML = "<div class='text-red-500 font-bold tracking-widest'>> GLITCH DETECTED: REBOOTING LEVEL...</div>";
-    termOverlay.style.opacity = '1';
-
-    gameActive = false;
-
-    setTimeout(() => {
-        document.body.classList.remove('glitch-active');
-        termOverlay.style.opacity = '0';
-        initLevel(currentLevel);
-        gameActive = true;
-        gameLoop();
-    }, 1500);
-}
-
-function winGame() {
-    gameActive = false;
-    const termOverlay = document.getElementById('terminal-overlay');
-    const termText = document.getElementById('terminal-text');
-
-    termOverlay.style.opacity = '1';
-    termText.innerHTML = '';
-
-    const narrative = [
-        "CORE DATA FRAGMENTS RECOVERED.",
-        "THREAT NEUTRALIZED.",
-        "PURGING CORRUPTED SECTORS...",
-        "SYSTEM STABILIZATION IN PROGRESS...",
-        "REBOOTING HOME_DASHBOARD..."
-    ];
-
-    playNarrative(termText, narrative, 0, async () => {
-        localStorage.setItem('gridEaterHero', 'true');
-        localStorage.setItem('victoryDate', new Date().toLocaleDateString());
-
-        // Sync Victory to Supabase
-        const { data: { session } } = await db.auth.getSession();
-        if (session && session.user) {
-            try {
-                await db
-                    .from('user_profiles')
-                    .upsert({
-                        id: session.user.id,
-                        victory_hero: true,
-                        updated_at: new Date()
-                    });
-            } catch (e) {
-                console.error("Supabase Victory Sync Failed:", e);
+            this.State.wave++;
+            this.saveGame();
+            const count = 5 + this.State.wave * 2;
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => { if (this.State.running && !this.State.paused) this.State.enemies.push(new this.Enemy(this.State.wave)); }, i * Math.max(200, 600 - this.State.wave * 10));
             }
         }
 
-        showMedal();
-        exitTransition("RESTORED");
-    });
-}
+        // Entities Update
+        this.State.towers.forEach(t => { t.update(); t.draw(ctx); });
+        this.State.bullets = this.State.bullets.filter(b => { if (b.update()) return false; b.draw(ctx); return true; });
+        this.State.enemies = this.State.enemies.filter(e => {
+            if (e.health <= 0) {
+                e.die(); this.State.money += e.reward; this.State.meta.totalKills++;
+                return false;
+            }
+            if (e.targetIdx >= this.path.length) {
+                this.State.health -= 10; // Lose integrity
+                this.State.health = Math.max(0, this.State.health);
+                return false;
+            }
+            e.update(); e.draw(ctx); return true;
+        });
 
-function exitTransition(status) {
-    document.body.classList.add('glitch-active');
+        // VFX
+        this.State.pulses = this.State.pulses.filter(p => {
+            ctx.strokeStyle = p.c; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - p.life), 0, Math.PI * 2); ctx.stroke();
+            p.life -= 0.04; return p.life > 0;
+        });
+        this.State.floatingTexts = this.State.floatingTexts.filter(f => {
+            ctx.fillStyle = `rgba(255,255,255,${f.life})`; ctx.font = '10px monospace'; ctx.fillText(f.text, f.x, f.y - (1 - f.life) * 20);
+            f.life -= 0.02; return f.life > 0;
+        });
 
-    const container = document.getElementById('grid-leak-container');
-    const boxes = Array.from(container.children);
-    boxes.sort(() => Math.random() - 0.5);
+        // UI Updates
+        document.getElementById('moneyEl').innerText = Math.floor(this.State.money);
+        document.getElementById('healthEl').innerText = Math.floor(this.State.health) + '%';
+        document.getElementById('waveEl').innerText = this.State.wave;
+        document.getElementById('skillNuke').disabled = this.State.money < 500;
 
-    boxes.forEach((box, i) => {
-        setTimeout(() => box.classList.remove('active'), i * 2);
-    });
+        if (this.State.health <= 0) this.endGame("SYSTEM COMPROMISED");
 
-    setTimeout(() => {
-        document.body.classList.remove('glitch-active');
-        document.getElementById('game-overlay').classList.add('hidden');
-        canvas.classList.add('hidden');
-        document.getElementById('game-ui').classList.add('hidden');
-        document.getElementById('terminal-overlay').style.opacity = '0';
-        document.getElementById('terminal-text').innerHTML = '';
-        currentLevel = 1;
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(() => this.gameLoop());
+    },
 
-        if (status === "RESTORED") {
-            alert("SYSTEM RESTORED: YOU ARE A HERO!");
+    handleInput(e) {
+        if (!this.State.running || this.State.paused) return;
+        const r = this.canvas.getBoundingClientRect();
+        const x = e.clientX - r.left, y = e.clientY - r.top;
+        const gx = Math.floor(x / this.State.gridSize), gy = Math.floor(y / this.State.gridSize);
+
+        const clicked = this.State.towers.find(t => t.gx === gx && t.gy === gy);
+        if (clicked) {
+            this.State.selectedPlacedTower = clicked;
+            this.State.selectedTowerType = null;
+            this.updateUI();
+        } else if (this.State.selectedTowerType) {
+            const cfg = this.towerTypes[this.State.selectedTowerType];
+            if (this.State.money >= cfg.cost && !this.isOnPath(gx, gy) && !clicked) {
+                this.State.towers.push(new this.Tower(gx, gy, cfg));
+                this.State.money -= cfg.cost;
+                this.updateUI();
+            }
+        } else {
+            this.State.selectedPlacedTower = null;
+            this.updateUI();
         }
-    }, 1200);
-}
+    },
 
-// --- REWARDS ---
-function showMedal() {
-    if (localStorage.getItem('gridEaterHero') === 'true') {
-        document.getElementById('medal-container').classList.remove('hidden');
+    isOnPath(gx, gy) {
+        const cx = gx * this.State.gridSize + 20, cy = gy * this.State.gridSize + 20;
+        for (let i = 0; i < this.path.length - 1; i++) {
+            if (this.distToSegment({ x: cx, y: cy }, this.path[i], this.path[i + 1]) < 25) return true;
+        }
+        return false;
+    },
+
+    distToSegment(p, v, w) {
+        const l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
+        if (l2 == 0) return Math.sqrt((p.x - v.x) ** 2 + (p.y - v.y) ** 2);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.sqrt((p.x - (v.x + t * (w.x - v.x))) ** 2 + (p.y - (v.y + t * (w.y - v.y))) ** 2);
+    },
+
+    // --- CLASSES ---
+    Enemy: class {
+        constructor(wave) {
+            this.x = SysDef.path[0].x; this.y = SysDef.path[0].y;
+            this.targetIdx = 1;
+            const waveMult = Math.pow(1.15, wave);
+            this.maxHealth = 20 + (wave * 15 * waveMult);
+            this.health = this.maxHealth;
+            this.speed = 1.2 + (Math.min(wave, 30) * 0.05);
+            this.slowed = 0;
+            this.reward = 25 + Math.floor(wave * 2);
+            this.isBoss = (wave % 5 === 0);
+            if (this.isBoss) { this.maxHealth *= 5; this.speed *= 0.6; this.reward *= 5; }
+        }
+        update() {
+            if (this.slowed > 0) this.slowed--;
+            const target = SysDef.path[this.targetIdx];
+            const dx = target.x - this.x, dy = target.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const move = this.slowed > 0 ? this.speed * 0.4 : this.speed;
+            if (dist < move) {
+                this.targetIdx++;
+            } else {
+                this.x += (dx / dist) * move; this.y += (dy / dist) * move;
+            }
+        }
+        draw(ctx) {
+            let color = this.slowed > 0 ? '#0ff' : (this.isBoss ? '#f0f' : '#f33');
+            ctx.shadowBlur = 10; ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.isBoss ? 16 : 10, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+            // Health bar
+            ctx.fillStyle = '#111'; ctx.fillRect(this.x - 10, this.y - 18, 20, 3);
+            ctx.fillStyle = '#0f0'; ctx.fillRect(this.x - 10, this.y - 18, (this.health / this.maxHealth) * 20, 3);
+        }
+        die() {
+            // Particles?
+        }
+    },
+
+    Tower: class {
+        constructor(gx, gy, cfg) {
+            this.gx = gx; this.gy = gy;
+            this.x = gx * 40 + 20; this.y = gy * 40 + 20;
+            this.range = cfg.range; this.damage = cfg.damage;
+            this.color = cfg.color; this.type = cfg.type;
+            this.lv = { speed: 1, power: 1, range: 1 };
+            this.cooldown = 0;
+            this.targetMode = 'first';
+            this.isElite = false;
+        }
+        update() {
+            if (this.cooldown > 0) this.cooldown--;
+            if (this.cooldown <= 0) {
+                const targets = SysDef.State.enemies.filter(e => Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2) < this.range);
+                if (targets.length) {
+                    let target = targets[0]; // Simple first targeting
+                    this.fire(target);
+                    let baseCd = (this.type === 'multi' ? 50 : 20);
+                    if (this.isElite) baseCd *= 0.6;
+                    this.cooldown = baseCd / (1 + this.lv.speed * 0.3);
+                }
+            }
+        }
+        fire(target) {
+            let dmg = this.damage * this.lv.power;
+            if (this.isElite) dmg *= 2.5;
+
+            if (this.type === 'slow' && (this.lv.range >= 3 || this.isElite)) {
+                // AOE Slow
+                SysDef.State.enemies.forEach(e => {
+                    if (Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2) < this.range) {
+                        e.takeDamage(dmg);
+                        e.slowed = this.isElite ? 120 : 60;
+                    }
+                });
+                SysDef.State.pulses.push({ x: this.x, y: this.y, r: this.range, c: this.color, life: 1 });
+            } else {
+                SysDef.State.bullets.push(new SysDef.Bullet(this.x, this.y, target, dmg, this.color, this.type === 'slow', this.isElite));
+            }
+        }
+        draw(ctx) {
+            ctx.shadowBlur = this.isElite ? 15 : 0;
+            ctx.shadowColor = this.color;
+            ctx.strokeStyle = this.color; ctx.lineWidth = this.isElite ? 4 : 2;
+            ctx.strokeRect(this.x - 12, this.y - 12, 24, 24);
+            if (this.isElite) {
+                ctx.strokeRect(this.x - 8, this.y - 8, 16, 16);
+                ctx.fillStyle = this.color; ctx.globalAlpha = 0.3;
+                ctx.fillRect(this.x - 12, this.y - 12, 24, 24); ctx.globalAlpha = 1;
+            }
+            if (SysDef.State.selectedPlacedTower === this) {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0,255,255,0.2)'; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+            }
+            ctx.shadowBlur = 0;
+        }
+    },
+
+    Bullet: class {
+        constructor(x, y, target, dmg, color, isSlow, isElite) {
+            this.x = x; this.y = y; this.target = target; this.dmg = dmg; this.color = color; this.isSlow = isSlow;
+            this.isElite = isElite;
+            this.speed = isElite ? 15 : 10;
+        }
+        update() {
+            const dx = this.target.x - this.x, dy = this.target.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < this.speed) {
+                this.target.takeDamage(this.dmg);
+                if (this.isSlow) this.target.slowed = this.isElite ? 120 : 60;
+                // Text?
+                return true;
+            }
+            this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed;
+            return false;
+        }
+        draw(ctx) {
+            ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.isElite ? 5 : 3, 0, Math.PI * 2); ctx.fill();
+        }
+    },
+
+    // --- ACTIONS ---
+    selectTower(type) {
+        this.State.selectedTowerType = type;
+        this.State.selectedPlacedTower = null;
+        // Simple DOM update:
+        document.querySelectorAll('.tower-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('btn-' + type).classList.add('selected');
+        this.updateUI();
+    },
+
+    updateUI() {
+        const box = document.getElementById('upgradeBox');
+        if (!this.State.selectedPlacedTower) { box.classList.add('hidden'); return; }
+
+        box.classList.remove('hidden');
+        const t = this.State.selectedPlacedTower;
+        document.getElementById('towerInfo').innerText = (t.isElite ? "ELITE " : "") + `${t.type.toUpperCase()} LV.${Math.max(t.lv.speed, t.lv.power, t.lv.range)}`;
+
+        this.updateBtn('upSpeed', 'THROUGHPUT', t.lv.speed);
+        this.updateBtn('upPower', 'INTEGRITY', t.lv.power);
+        this.updateBtn('upRange', 'COVERAGE', t.lv.range);
+
+        const canPrestige = t.lv.speed >= 5 && t.lv.power >= 5 && t.lv.range >= 5 && !t.isElite;
+        const pBtn = document.getElementById('prestigeBtn');
+        pBtn.classList.toggle('hidden', !canPrestige);
+    },
+
+    updateBtn(id, label, lv) {
+        const btn = document.getElementById(id);
+        const cost = lv * 100;
+        btn.innerHTML = lv >= 5 ? 'MAX' : `${label} ($${cost})`;
+        btn.disabled = lv >= 5 || this.State.money < cost;
+    },
+
+    applyUpgrade(cat) {
+        const t = this.State.selectedPlacedTower;
+        const cost = t.lv[cat] * 100;
+        if (this.State.money >= cost && t.lv[cat] < 5) {
+            this.State.money -= cost;
+            t.lv[cat]++;
+            if (cat === 'range') t.range += 30;
+            this.updateUI();
+        }
+    },
+
+    prestigeTower() {
+        const t = this.State.selectedPlacedTower;
+        if (this.State.money >= 1000 && !t.isElite) {
+            this.State.money -= 1000;
+            t.isElite = true;
+            t.range += 50;
+            this.updateUI();
+        }
+    },
+
+    useNuke() {
+        if (this.State.money >= 500) {
+            this.State.money -= 500;
+            this.State.enemies.forEach(e => e.takeDamage(1000));
+            this.State.pulses.push({ x: this.canvas.width / 2, y: this.canvas.height / 2, r: 1000, c: '#f00', life: 1 });
+        }
+    },
+
+    triggerWave10Choice() {
+        this.State.paused = true;
+        document.getElementById('waveNotify').classList.remove('hidden');
+    },
+
+    continuePlaying() {
+        this.State.paused = false;
+        document.getElementById('waveNotify').classList.add('hidden');
+    },
+
+    finishGame() {
+        document.getElementById('waveNotify').classList.add('hidden');
+        this.endGame("THREAT ELIMINATED");
+    },
+
+    endGame(status) {
+        this.State.running = false;
+        this.saveGame();
+        document.getElementById('endScreen').classList.remove('hidden');
+        document.getElementById('controlPanel').classList.add('hidden');
+        document.getElementById('endStatus').innerText = status;
+        document.getElementById('finalScore').innerHTML = `WAVES SURVIVED: ${this.State.wave}<br>TOTAL PACKETS: ${this.State.meta.totalKills}`;
+    },
+
+    upgradeMeta(type) {
+        if (type === 'startMoney' && this.State.meta.totalKills >= 100) {
+            this.State.meta.totalKills -= 100;
+            this.State.meta.startMoneyLv++;
+        } else if (type === 'coreHealth' && this.State.meta.totalKills >= 150) {
+            this.State.meta.totalKills -= 150;
+            this.State.meta.coreHealthLv++;
+        }
+        this.saveGame();
+    },
+
+    resetGameUI() {
+        this.startGame();
+    },
+
+    exitGame() {
+        this.State.running = false;
+        document.body.classList.remove('defense-mode');
+        document.getElementById('defense-protocol').classList.add('hidden');
     }
-}
-
-function showVictoryLog() {
-    const date = localStorage.getItem('victoryDate');
-    const name = localStorage.getItem('userName') || 'GUEST';
-    alert(`System successfully restored by ${name} on ${date}.`);
-}
+};
 
 // --- STATUS DOT EASTER EGG ---
 let statusClicks = 0;
 let hudInterval = null;
 
-document.getElementById('status-dot').addEventListener('click', () => {
-    statusClicks++;
-    if (statusClicks >= 5) {
-        const isOverdrive = document.body.classList.toggle('mecha-mode');
-        const status = document.getElementById('system-status');
-        status.innerText = isOverdrive ? "SYSTEM OVERDRIVE" : "SYSTEM ONLINE";
+const statusDot = document.getElementById('status-dot');
+if (statusDot) {
+    statusDot.addEventListener('click', () => {
+        statusClicks++;
+        if (statusClicks >= 5) {
+            const isOverdrive = document.body.classList.toggle('mecha-mode');
+            const status = document.getElementById('system-status');
+            if (status) status.innerText = isOverdrive ? "SYSTEM OVERDRIVE" : "SYSTEM ONLINE";
 
-        if (isOverdrive) {
-            startMechaHUD();
-        } else {
-            stopMechaHUD();
+            if (isOverdrive) {
+                startMechaHUD();
+            } else {
+                stopMechaHUD();
+            }
+
+            statusClicks = 0;
         }
-
-        statusClicks = 0;
-    }
-});
+    });
+}
 
 function startMechaHUD() {
     if (hudInterval) clearInterval(hudInterval);
@@ -653,105 +898,51 @@ function stopMechaHUD() {
     }
 }
 
-// --- SUPABASE AUTHENTICATION ---
-async function initAuth() {
-    console.log("Checking Auth Components...");
+// --- GLOBAL AUTH UI INIT ---
+function initAuth() {
+    console.log("Auth Init...");
     const authBtn = document.getElementById('auth-btn');
     const userName = document.getElementById('user-name');
     const userAvatar = document.getElementById('user-avatar');
 
-    if (!authBtn || !userName || !userAvatar) {
-        console.error("Auth UI Elements missing!");
-        return;
-    }
+    if (!authBtn || !userName || !userAvatar) return;
 
     if (!db) {
-        console.error("Supabase Client not initialized! Check API keys and SDK source.");
         authBtn.innerText = "DB ERROR";
         return;
     }
 
-    console.log("Supabase Auth Initializing...");
-
-    // Function to handle Google Sign-In
     const startLogin = async () => {
-        console.log("Starting OAuth flow...");
         const { error } = await db.auth.signInWithOAuth({
             provider: 'google',
-            options: {
-                redirectTo: window.location.origin + window.location.pathname
-            }
+            options: { redirectTo: window.location.origin + window.location.pathname }
         });
-        if (error) {
-            console.error("Sign-in Error:", error.message);
-            alert("Login Error: " + error.message);
-        }
+        if (error) alert("Login Error: " + error.message);
     };
 
-    // Attach initial click handler just in case
     authBtn.onclick = startLogin;
 
-    // Listen for Auth Changes
     db.auth.onAuthStateChange(async (event, session) => {
-        console.log("Supabase Auth Event:", event, session ? "Session Active" : "No Session");
-
         if (session && session.user) {
             const user = session.user;
-            console.log("User Logged In:", user.email);
-
-            userName.innerText = user.user_metadata.full_name || user.email.split('@')[0];
-            userAvatar.src = user.user_metadata.avatar_url || `https://ui-avatars.com/api/?name=${userName.innerText}&background=random&color=fff`;
-
+            userName.innerText = user.user_metadata.full_name || "User";
+            userAvatar.src = user.user_metadata.avatar_url || "";
             authBtn.innerText = "SIGN OUT";
             authBtn.onclick = async () => {
-                console.log("Signing out...");
                 await db.auth.signOut();
                 window.location.reload();
             };
 
-            localStorage.setItem('userName', userName.innerText);
-
             // Sync Shortcuts
             try {
-                const { data, error } = await db
-                    .from('user_profiles')
-                    .select('shortcuts, victory_hero')
-                    .eq('id', user.id)
-                    .single();
-
-                if (error && error.code !== 'PGRST116') {
-                    console.error("Supabase Data Fetch Error:", error.message);
-                }
-
-                if (data && Array.isArray(data.shortcuts)) {
-                    console.log("Shortcuts synced from cloud.");
+                const { data } = await db.from('user_profiles').select('shortcuts').eq('id', user.id).single();
+                if (data && data.shortcuts) {
                     categories = data.shortcuts;
                     render();
                 }
-                if (data && data.victory_hero) {
-                    localStorage.setItem('gridEaterHero', 'true');
-                    showMedal();
-                }
-            } catch (err) {
-                console.error("Sync Exception:", err);
-            }
-        } else {
-            console.log("Setting UI to Guest mode.");
-            userName.innerText = "GUEST";
-            userAvatar.src = `https://ui-avatars.com/api/?name=Guest&background=random&color=fff`;
-            authBtn.innerText = "SIGN IN";
-            authBtn.onclick = startLogin;
+            } catch (err) { }
         }
     });
 }
 
-// Global Error Catch to prevent UI freeze
-window.onerror = function (msg, url, line) {
-    console.error("Global Error:", msg, "at", url, ":", line);
-    return false;
-};
-
-// Final Init
-render();
 initAuth();
-showMedal();
