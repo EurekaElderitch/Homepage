@@ -382,10 +382,10 @@ function initSystemBreach() {
         const narrative = [
             "SCANNING FOR VULNERABILITIES...",
             "BYPASSING KERNEL SECURITY...",
-            "EXTRACTING GRID_TILESET...",
-            "HOSTILE ENTITIES DETECTED: GLITCH_PROTOCOLS",
-            "INITIATING COUNTER-MEASURES...",
-            "LOADING GRID_EATER.EXE..."
+            "EXTRACTING ENCRYPTION_KEYS...",
+            "HOSTILE ENTITIES DETECTED: VIRUS_WAVE",
+            "INITIATING DEFENSE PROTOCOL...",
+            "PREPARING COUNTER ATTACK..."
         ];
 
         playNarrative(termText, narrative, 0, () => {
@@ -394,7 +394,7 @@ function initSystemBreach() {
             setTimeout(() => {
                 document.body.classList.remove('glitch-active');
                 termOverlay.style.opacity = '0';
-                setTimeout(startGame, 500);
+                setTimeout(() => SysDef.init(), 500); // Launch System Defense
             }, 1000);
         });
     }, 1500);
@@ -417,291 +417,44 @@ function playNarrative(el, lines, index, cb) {
 }
 
 
-// --- GAME ENGINE: GRID EATER ---
-let gameActive = false;
-let currentLevel = 1;
-let score = 0;
-const canvas = document.getElementById('game-canvas');
-const ctx = canvas.getContext('2d');
 
-const TILE_SIZE = 20;
-const mazeLayouts = [
-    [
-        "##############################",
-        "#............##............#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#..........................#",
-        "#.####.##.########.##.####.#",
-        "#......##....##....##......#",
-        "######.#####.##.#####.######",
-        "     #.##..........##.#     ",
-        "######.##.###--###.##.######",
-        "      .   #      #   .      ",
-        "######.##.########.##.######",
-        "     #.##..........##.#     ",
-        "######.##.########.##.######",
-        "#............##............#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#...##................##...#",
-        "###.##.##.########.##.##.###",
-        "#......##....##....##......#",
-        "##############################"
-    ],
-    [
-        "##############################",
-        "#............##............#",
-        "#.####.#####.##.#####.####.#",
-        "#.#  #.#   #.##.#   #.#  #.#",
-        "#.####.#####.##.#####.####.#",
-        "#..........................#",
-        "#.####.##.########.##.####.#",
-        "#.#    ##....##....##    #.#",
-        "#.######.###-##-###.######.#",
-        "#.      .   #  #   .      .#",
-        "#.######.##########.######.#",
-        "#.#    ##    ##    ##    #.#",
-        "#.####.##.########.##.####.#",
-        "#..........................#",
-        "#.####.#####.##.#####.####.#",
-        "#.#  #.#   #.##.#   #.#  #.#",
-        "#.####.#####.##.#####.####.#",
-        "#...##................##...#",
-        "#......##....##....##......#",
-        "##############################"
-    ],
-    [
-        "##############################",
-        "#............##............#",
-        "#.####.#####.##.#####.####.#",
-        "#.#  #.#   #.##.#   #.#  #.#",
-        "#.####.#####.##.#####.####.#",
-        "#..........................#",
-        "#.####.##.########.##.####.#",
-        "#.#    ##....##....##    #.#",
-        "#.######.###.##.###.######.#",
-        "#.#    ##....##....##    #.#",
-        "#.####.##.########.##.####.#",
-        "#..........................#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#.####.#####.##.#####.####.#",
-        "#..........................#",
-        "#.###.####.##--##.####.###.#",
-        "#.#.#.#  #.######.#  #.#.#.#",
-        "#... ... ...... ...... ... #",
-        "##############################"
-    ]
-];
+if (valid.length > 0) {
+    const pR = Math.floor(player.y / TILE_SIZE);
+    const pC = Math.floor(player.x / TILE_SIZE);
 
-let player, enemies, dots, walls;
-let currentDir = null;
-let nextDir = null;
-
-function startGame() {
-    gameActive = true;
-    canvas.classList.remove('hidden');
-    document.getElementById('game-ui').classList.remove('hidden');
-
-    const layout = mazeLayouts[currentLevel - 1];
-    canvas.width = layout[0].length * TILE_SIZE;
-    canvas.height = layout.length * TILE_SIZE;
-
-    initLevel(currentLevel);
-    gameLoop();
-}
-
-function initLevel(lvl) {
-    const layout = mazeLayouts[lvl - 1];
-    player = { x: 0, y: 0, size: 8, speed: 2 };
-    dots = [];
-    walls = [];
-    enemies = [];
-    score = 0;
-
-    for (let r = 0; r < layout.length; r++) {
-        for (let c = 0; c < layout[r].length; c++) {
-            const char = layout[r][c];
-            const x = c * TILE_SIZE;
-            const y = r * TILE_SIZE;
-
-            if (char === "#") {
-                walls.push({ x, y, w: TILE_SIZE, h: TILE_SIZE });
-            } else if (char === ".") {
-                dots.push({ x: x + TILE_SIZE / 2, y: y + TILE_SIZE / 2 });
-            }
-        }
-    }
-
-    // Start positions
-    // Player starts at bottom center
-    player.x = 15 * TILE_SIZE + TILE_SIZE / 2;
-    player.y = (layout.length - 4) * TILE_SIZE + TILE_SIZE / 2;
-
-    // Create Enemies in the center "Ghost House"
-    for (let i = 0; i < lvl; i++) {
-        enemies.push({
-            x: (14 + (i % 3)) * TILE_SIZE + TILE_SIZE / 2,
-            y: 10 * TILE_SIZE + TILE_SIZE / 2,
-            speed: 1 + (lvl * 0.3),
-            dir: null
-        });
-    }
-
-    document.getElementById('game-level').innerText = lvl;
-    document.getElementById('game-score').innerText = 0;
-    document.getElementById('game-total').innerText = dots.length;
-
-    currentDir = null;
-    nextDir = null;
-}
-
-window.addEventListener('keydown', e => {
-    if (e.code === 'ArrowUp') nextDir = 'up';
-    if (e.code === 'ArrowDown') nextDir = 'down';
-    if (e.code === 'ArrowLeft') nextDir = 'left';
-    if (e.code === 'ArrowRight') nextDir = 'right';
-    if (e.code === 'Escape' && gameActive) abortGame();
-});
-
-function gameLoop() {
-    if (!gameActive) return;
-
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
-function checkWallCollision(x, y, size) {
-    return walls.some(w => {
-        return x + size > w.x && x - size < w.x + w.w &&
-            y + size > w.y && y - size < w.y + w.h;
+    // Pick neighbor closest to Target Tile (Player)
+    valid.sort((a, b) => {
+        const distA = Math.hypot(pR - a.r, pC - a.c);
+        const distB = Math.hypot(pR - b.r, pC - b.c);
+        return distA - distB;
     });
+    e.dir = valid[0].dir;
+} else {
+    // If stuck (rare), allow reverse
+    e.dir = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' }[e.dir];
 }
-
-function update() {
-    // 1. Try to apply nextDir (Direction Buffer)
-    if (nextDir) {
-        let testX = player.x;
-        let testY = player.y;
-
-        // Snapping: only allow turns when roughly aligned with grid center
-        const centerX = Math.floor(player.x / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-        const centerY = Math.floor(player.y / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
-
-        if (Math.abs(player.x - centerX) < 5 && Math.abs(player.y - centerY) < 5) {
-            if (nextDir === 'up') { testX = centerX; testY = centerY - player.speed; }
-            if (nextDir === 'down') { testX = centerX; testY = centerY + player.speed; }
-            if (nextDir === 'left') { testX = centerX - player.speed; testY = centerY; }
-            if (nextDir === 'right') { testX = centerX + player.speed; testY = centerY; }
-
-            if (!checkWallCollision(testX, testY, player.size)) {
-                player.x = centerX;
-                player.y = centerY;
-                currentDir = nextDir;
-                nextDir = null;
-            }
         }
-    }
 
-    // 2. Continuous Automatic Movement
-    if (currentDir) {
-        let nextX = player.x;
-        let nextY = player.y;
+// Apply movement
+if (e.dir === 'up') e.y -= e.speed;
+if (e.dir === 'down') e.y += e.speed;
+if (e.dir === 'left') e.x -= e.speed;
+if (e.dir === 'right') e.x += e.speed;
 
-        if (currentDir === 'up') nextY -= player.speed;
-        if (currentDir === 'down') nextY += player.speed;
-        if (currentDir === 'left') nextX -= player.speed;
-        if (currentDir === 'right') nextX += player.speed;
-
-        if (!checkWallCollision(nextX, nextY, player.size)) {
-            player.x = nextX;
-            player.y = nextY;
-        } else {
-            currentDir = null; // Stop at wall
-        }
-    }
-
-    // Eat Dots
-    dots = dots.filter(d => {
-        const dist = Math.hypot(player.x - d.x, player.y - d.y);
-        if (dist < 10) {
-            score++;
-            document.getElementById('game-score').innerText = score;
-            return false;
-        }
-        return true;
+// Collision with Player
+const distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
+if (distToPlayer < 12) gameOver();
     });
 
-    // Enemies AI (Target Tile Logic - Optimized)
-    enemies.forEach(e => {
-        const eR = Math.floor(e.y / TILE_SIZE);
-        const eC = Math.floor(e.x / TILE_SIZE);
-        const centerX = eC * TILE_SIZE + TILE_SIZE / 2;
-        const centerY = eR * TILE_SIZE + TILE_SIZE / 2;
-
-        // At tile center, decide next direction
-        if (Math.abs(e.x - centerX) < 2 && Math.abs(e.y - centerY) < 2) {
-            e.x = centerX;
-            e.y = centerY;
-
-            const neighbors = [
-                { dir: 'up', r: eR - 1, c: eC },
-                { dir: 'down', r: eR + 1, c: eC },
-                { dir: 'left', r: eR, c: eC - 1 },
-                { dir: 'right', r: eR, c: eC + 1 }
-            ];
-
-            // Prevent immediate reversal and filter walls
-            const layout = mazeLayouts[currentLevel - 1];
-            const valid = neighbors.filter(n => {
-                if (n.r < 0 || n.r >= layout.length || n.c < 0 || n.c >= layout[0].length) return false;
-                if (layout[n.r][n.c] === '#') return false;
-                if (e.dir === 'up' && n.dir === 'down') return false;
-                if (e.dir === 'down' && n.dir === 'up') return false;
-                if (e.dir === 'left' && n.dir === 'right') return false;
-                if (e.dir === 'right' && n.dir === 'left') return false;
-                return true;
-            });
-
-            if (valid.length > 0) {
-                const pR = Math.floor(player.y / TILE_SIZE);
-                const pC = Math.floor(player.x / TILE_SIZE);
-
-                // Pick neighbor closest to Target Tile (Player)
-                valid.sort((a, b) => {
-                    const distA = Math.hypot(pR - a.r, pC - a.c);
-                    const distB = Math.hypot(pR - b.r, pC - b.c);
-                    return distA - distB;
-                });
-                e.dir = valid[0].dir;
-            } else {
-                // If stuck (rare), allow reverse
-                e.dir = { 'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left' }[e.dir];
-            }
-        }
-
-        // Apply movement
-        if (e.dir === 'up') e.y -= e.speed;
-        if (e.dir === 'down') e.y += e.speed;
-        if (e.dir === 'left') e.x -= e.speed;
-        if (e.dir === 'right') e.x += e.speed;
-
-        // Collision with Player
-        const distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
-        if (distToPlayer < 12) gameOver();
-    });
-
-    // Win Condition
-    if (dots.length === 0) {
-        if (currentLevel < 3) {
-            currentLevel++;
-            initLevel(currentLevel);
-        } else {
-            winGame();
-        }
+// Win Condition
+if (dots.length === 0) {
+    if (currentLevel < 3) {
+        currentLevel++;
+        initLevel(currentLevel);
+    } else {
+        winGame();
     }
+}
 }
 
 function draw() {
