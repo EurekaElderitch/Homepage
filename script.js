@@ -64,18 +64,12 @@ const defaultCategories = [
 ];
 
 // --- STATE ---
-let categories = defaultCategories;
-try {
-    const saved = localStorage.getItem('dashboardCategories');
-    if (saved && saved !== 'undefined') {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-            categories = parsed;
-        }
-    }
-} catch (e) {
-    console.warn("Storage Error: Falling back to defaults.", e);
-}
+// --- STATE ---
+let categories = JSON.parse(JSON.stringify(defaultCategories)); // Deep copy defaults initially
+
+// Note: Logic moved to InitAuth. 
+// Guest = Always Default. 
+// User = Load potentially cached data or Cloud data.
 
 let isEditing = false;
 // Selectors as functions to ensure availability
@@ -986,11 +980,22 @@ function initAuth() {
 
     // Handle Session State
     db.auth.onAuthStateChange(async (event, session) => {
+        const editFab = document.getElementById('edit-fab');
+
         if (session && session.user) {
             const user = session.user;
+            // 1. User Mode: Allow Editing
+            if (editFab) editFab.classList.remove('hidden');
             userName.innerText = user.user_metadata.full_name || "User";
             userAvatar.src = user.user_metadata.avatar_url || "";
             authBtn.innerText = "SIGN OUT";
+
+            // 2. Load Cached User Data (if any) or Default
+            try {
+                const saved = localStorage.getItem('dashboardCategories');
+                if (saved) categories = JSON.parse(saved);
+            } catch (e) { }
+            render();
 
             // Override Click for Logout
             authBtn.onclick = async () => {
