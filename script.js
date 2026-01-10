@@ -983,9 +983,14 @@ function initAuth() {
         const editFab = document.getElementById('edit-fab');
 
         if (session && session.user) {
+            console.log("Auth: User Logged In", session.user.email);
             const user = session.user;
-            // 1. User Mode: Allow Editing
-            if (editFab) editFab.classList.remove('hidden');
+
+            // 1. User Mode: Allow Editing (Enforce Visuals)
+            if (editFab) {
+                editFab.classList.remove('hidden');
+                editFab.style.display = 'flex'; // Failsafe
+            }
             userName.innerText = user.user_metadata.full_name || "User";
             userAvatar.src = user.user_metadata.avatar_url || "";
             authBtn.innerText = "SIGN OUT";
