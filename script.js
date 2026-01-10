@@ -180,6 +180,8 @@ function addItem(cIdx) {
     save();
 }
 
+let isSaving = false; // Save Queue Lock
+
 async function save() {
     localStorage.setItem('dashboardCategories', JSON.stringify(categories));
     render();
@@ -187,6 +189,7 @@ async function save() {
     // Sync to Supabase if logged in
     const { data: { session } } = await db.auth.getSession();
     if (session && session.user) {
+        isSaving = true; // Lock
         // Visual Feedback (Cursor wait)
         document.body.style.cursor = 'wait';
         try {
@@ -204,6 +207,7 @@ async function save() {
             alert("Sync Failed: Check Internet Connection");
         } finally {
             document.body.style.cursor = 'default';
+            isSaving = false; // Unlock
         }
     }
 }
@@ -1004,18 +1008,30 @@ function initAuth() {
 
             // Override Click for Logout
             authBtn.onclick = async () => {
+                // Wait for any pending saves
+                if (isSaving) {
+                    authBtn.innerText = "SAVING...";
+                    while (isSaving) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+
                 authBtn.innerText = "LOGGING OUT...";
                 try {
-                    // 1. API SignOut
-                    await db.auth.signOut();
+                    // 1. API SignOut with Timeout
+                    const signOutPromise = db.auth.signOut();
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("Timeout")), 3000)
+                    );
+                    await Promise.race([signOutPromise, timeoutPromise]);
                 } catch (e) {
-                    console.warn("API Signout Issue (ignoring):", e);
+                    console.warn("SignOut forced locally:", e);
                 } finally {
                     // 2. FORCE CLEAR Local Storage (Nuclear Option)
-                    // Remove Supabase Auth Token manually to ensure "unstuck"
                     Object.keys(localStorage).forEach(key => {
                         if (key.startsWith('sb-')) localStorage.removeItem(key);
                     });
+                    localStorage.removeItem('dashboardCategories');
 
                     // 3. Reload
                     window.location.reload();
