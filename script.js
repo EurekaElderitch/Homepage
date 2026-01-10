@@ -180,6 +180,55 @@ function addItem(cIdx) {
     save();
 }
 
+// --- SYNC STATUS LED ---
+function setSyncStatus(status) {
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('system-status');
+    if (!dot || !text) return;
+
+    switch (status) {
+        case 'synced':
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]';
+            text.innerText = 'SYNCED';
+            break;
+        case 'syncing':
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)] animate-pulse';
+            text.innerText = 'SYNCING...';
+            break;
+        case 'offline':
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]';
+            text.innerText = 'OFFLINE';
+            break;
+        case 'guest':
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.4)]';
+            text.innerText = 'GUEST';
+            break;
+    }
+}
+
+async function forceSync() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session || !session.user) {
+        alert('Please login to sync');
+        return;
+    }
+
+    setSyncStatus('syncing');
+    try {
+        const { data } = await db.from('user_profiles').select('shortcuts').eq('id', session.user.id).single();
+        if (data && data.shortcuts) {
+            categories = data.shortcuts;
+            localStorage.setItem('dashboardCategories', JSON.stringify(categories));
+            render();
+            setSyncStatus('synced');
+            console.log('Force Sync Complete');
+        }
+    } catch (e) {
+        console.error('Force Sync Failed:', e);
+        setSyncStatus('offline');
+    }
+}
+
 let isSaving = false; // Save Queue Lock
 
 async function save() {
@@ -190,6 +239,7 @@ async function save() {
     const { data: { session } } = await db.auth.getSession();
     if (session && session.user) {
         isSaving = true; // Lock
+        setSyncStatus('syncing'); // LED: Yellow
         // Visual Feedback (Cursor wait)
         document.body.style.cursor = 'wait';
         try {
@@ -202,8 +252,10 @@ async function save() {
                 });
             if (error) throw error;
             console.log("Cloud Save Complete");
+            setSyncStatus('synced'); // LED: Green
         } catch (e) {
             console.error("Supabase Save Failed:", e);
+            setSyncStatus('offline'); // LED: Red
             alert("Sync Failed: Check Internet Connection");
         } finally {
             document.body.style.cursor = 'default';
@@ -215,10 +267,58 @@ async function save() {
 setTimeout(() => {
     const editBtn = getEditBtn();
     if (editBtn) {
-        editBtn.addEventListener('click', () => {
-            isEditing = !isEditing;
-            document.body.classList.toggle('is-editing', isEditing);
-            render();
+        let pressTimer;
+        let isLongPress = false;
+
+        // Mouse events
+        editBtn.addEventListener('mousedown', () => {
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                forceSync();
+                editBtn.classList.add('scale-95');
+            }, 1000); // 1 second hold
+        });
+
+        editBtn.addEventListener('mouseup', () => {
+            clearTimeout(pressTimer);
+            editBtn.classList.remove('scale-95');
+            if (!isLongPress) {
+                // Normal click = Toggle Edit Mode
+                isEditing = !isEditing;
+                document.body.classList.toggle('is-editing', isEditing);
+                render();
+            }
+        });
+
+        editBtn.addEventListener('mouseleave', () => {
+            clearTimeout(pressTimer);
+            editBtn.classList.remove('scale-95');
+        });
+
+        // Touch events (Mobile)
+        editBtn.addEventListener('touchstart', (e) => {
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                forceSync();
+                editBtn.classList.add('scale-95');
+            }, 1000);
+        });
+
+        editBtn.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+            editBtn.classList.remove('scale-95');
+            if (!isLongPress) {
+                isEditing = !isEditing;
+                document.body.classList.toggle('is-editing', isEditing);
+                render();
+            }
+        });
+
+        editBtn.addEventListener('touchcancel', () => {
+            clearTimeout(pressTimer);
+            editBtn.classList.remove('scale-95');
         });
     }
 }, 1000);
@@ -1039,13 +1139,34 @@ function initAuth() {
             };
 
             // Sync Shortcuts (Initial Load)
+            setSyncStatus('syncing');
             try {
-                const { data } = await db.from('user_profiles').select('shortcuts').eq('id', user.id).single();
-                if (data && data.shortcuts) {
-                    categories = data.shortcuts;
+                const { data, error } = await db.from('user_profiles').select('shortcuts').eq('id', user.id).single();
+
+                if (error && error.code === 'PGRST116') {
+                    // User profile doesn't exist yet, create it
+                    console.log('Creating new user profile...');
+                    await db.from('user_profiles').insert({
+                        id: user.id,
+                        shortcuts: defaultCategories,
+                        updated_at: new Date()
+                    });
+                    categories = JSON.parse(JSON.stringify(defaultCategories));
+                    localStorage.setItem('dashboardCategories', JSON.stringify(categories));
                     render();
+                    setSyncStatus('synced');
+                } else if (data && data.shortcuts) {
+                    categories = data.shortcuts;
+                    localStorage.setItem('dashboardCategories', JSON.stringify(categories));
+                    render();
+                    setSyncStatus('synced');
+                } else {
+                    setSyncStatus('synced'); // No data yet, but connected
                 }
-            } catch (err) { }
+            } catch (err) {
+                console.error('Initial Sync Error:', err);
+                setSyncStatus('offline');
+            }
 
             // Realtime Sync (Live Updates)
             const channel = db.channel('custom-all-channel')
