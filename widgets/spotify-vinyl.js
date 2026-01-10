@@ -5,6 +5,15 @@ const DEFAULT_TRACK = "4cOdK2wGLETKBW3PvgPWqT"; // Initial Track (Rick Roll? No,
 // Actually let's use a cool LoFi track: "Code LoFi" - generic ID
 const FALLBACK_TRACK = "5DAca2oQ17cWc8q2A8yAeb"; // Example Track (lofi hip hop)
 
+const DUMMY_LIBRARY = {
+    "lofi": "5DAca2oQ17cWc8q2A8yAeb",
+    "rick": "4cOdK2wGLETKBW3PvgPWqT",
+    "rock": "08mG3Y1vljYA6bvDtLLk15", // Queen - We Will Rock You
+    "anime": "3k3NWjySp5LAlhC99IiZl3", // Naruto - Blue Bird
+    "jazz": "1YQCdJdu721OzXzDT1i195", // Jazz standard
+    "pop": "60nZcImufyMA1KT4eoro2W" // Joji - Die For You
+};
+
 const VinylWidget = {
     state: {
         isLoggedIn: false,
@@ -115,8 +124,15 @@ const VinylWidget = {
                 .single();
 
             if (error || !data) {
-                alert("Security Error: API Keys not found in 'api_secrets' table.");
-                return;
+                console.warn("Vinyl: Keys missing. Using Dummy Mode.");
+                const dummyId = DUMMY_LIBRARY[query.toLowerCase()];
+                if (dummyId) {
+                    this.updatePlayer(dummyId, true);
+                    return;
+                } else {
+                    alert("DUMMY MODE ACTIVE: Keys not found.\nTry searching: 'lofi', 'rock', 'anime', 'jazz', 'rick'");
+                    return;
+                }
             }
 
             const clientId = data.key_value;

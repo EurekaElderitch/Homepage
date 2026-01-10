@@ -54,3 +54,16 @@ A modern, highly responsive personal dashboard designed for efficiency and aesth
 ---
 
 > _"Protocol MK-01 is dormant but listening. The signal frequency is 5 Hz."_
+
+## Latest Updates (v2.0)
+
+### 🎵 Spotify Vinyl Widget (New!)
+- **Hybrid System**: Guest Mode (Offline) & User Mode (Cloud Sync).
+- **Security First**: API Keys stored in Supabase RLS, accessible only to logged-in users.
+- **Dummy Mode**: Fallback search keys ('lofi', 'rock', 'anime') for testing without API keys.
+- **UI**: Expanding Vinyl disc with iframe player.
+
+
+
+### 📂 Refactoring
+- Moved assets to dedicated `assets/` directory for cleaner structure.
