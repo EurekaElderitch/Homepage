@@ -964,24 +964,38 @@ function initAuth() {
     }
 
     const startLogin = async () => {
-        const { error } = await db.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: window.location.origin + window.location.pathname }
-        });
-        if (error) alert("Login Error: " + error.message);
+        try {
+            const { error } = await db.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin + window.location.pathname }
+            });
+            if (error) throw error;
+        } catch (e) {
+            alert("Login Error: " + e.message);
+        }
     };
 
+    // Default to Login
     authBtn.onclick = startLogin;
 
+    // Handle Session State
     db.auth.onAuthStateChange(async (event, session) => {
         if (session && session.user) {
             const user = session.user;
             userName.innerText = user.user_metadata.full_name || "User";
             userAvatar.src = user.user_metadata.avatar_url || "";
             authBtn.innerText = "SIGN OUT";
+
+            // Override Click for Logout
             authBtn.onclick = async () => {
-                await db.auth.signOut();
-                window.location.reload();
+                authBtn.innerText = "...";
+                try {
+                    await db.auth.signOut();
+                    window.location.reload();
+                } catch (e) {
+                    console.error("SignOut Failed:", e);
+                    alert("Logout failed. See console.");
+                }
             };
 
             // Sync Shortcuts
@@ -992,6 +1006,12 @@ function initAuth() {
                     render();
                 }
             } catch (err) { }
+        } else {
+            // Reset to Guest
+            userName.innerText = "GUEST";
+            userAvatar.src = "";
+            authBtn.innerText = "SIGN IN";
+            authBtn.onclick = startLogin;
         }
     });
 }

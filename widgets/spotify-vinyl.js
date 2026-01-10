@@ -54,7 +54,8 @@ const VinylWidget = {
                     
                     <div class="spotify-embed-container">
                         <iframe id="spotifyFrame" src="https://open.spotify.com/embed/track/${this.state.trackId}?utm_source=generator&theme=0" 
-                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                            allow="encrypted-media; clipboard-write; picture-in-picture" 
+                            loading="lazy"></iframe>
                     </div>
                 </div>
             </div>
