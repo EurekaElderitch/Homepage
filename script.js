@@ -292,58 +292,27 @@ async function save() {
 setTimeout(() => {
     const editBtn = getEditBtn();
     if (editBtn) {
-        let pressTimer;
-        let isLongPress = false;
+        let clickCount = 0;
+        let clickTimer;
 
-        // Mouse events
-        editBtn.addEventListener('mousedown', () => {
-            isLongPress = false;
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
+        editBtn.addEventListener('click', (e) => {
+            clickCount++;
+
+            if (clickCount === 1) {
+                // Wait to see if it's a double click
+                clickTimer = setTimeout(() => {
+                    // Single click = Toggle Edit Mode
+                    isEditing = !isEditing;
+                    document.body.classList.toggle('is-editing', isEditing);
+                    render();
+                    clickCount = 0;
+                }, 300); // 300ms window for double click
+            } else if (clickCount === 2) {
+                // Double click = Force Sync
+                clearTimeout(clickTimer);
+                clickCount = 0;
                 forceSync();
-                editBtn.classList.add('scale-95');
-            }, 1000); // 1 second hold
-        });
-
-        editBtn.addEventListener('mouseup', () => {
-            clearTimeout(pressTimer);
-            editBtn.classList.remove('scale-95');
-            if (!isLongPress) {
-                // Normal click = Toggle Edit Mode
-                isEditing = !isEditing;
-                document.body.classList.toggle('is-editing', isEditing);
-                render();
             }
-        });
-
-        editBtn.addEventListener('mouseleave', () => {
-            clearTimeout(pressTimer);
-            editBtn.classList.remove('scale-95');
-        });
-
-        // Touch events (Mobile)
-        editBtn.addEventListener('touchstart', (e) => {
-            isLongPress = false;
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-                forceSync();
-                editBtn.classList.add('scale-95');
-            }, 1000);
-        });
-
-        editBtn.addEventListener('touchend', () => {
-            clearTimeout(pressTimer);
-            editBtn.classList.remove('scale-95');
-            if (!isLongPress) {
-                isEditing = !isEditing;
-                document.body.classList.toggle('is-editing', isEditing);
-                render();
-            }
-        });
-
-        editBtn.addEventListener('touchcancel', () => {
-            clearTimeout(pressTimer);
-            editBtn.classList.remove('scale-95');
         });
     }
 }, 1000);
