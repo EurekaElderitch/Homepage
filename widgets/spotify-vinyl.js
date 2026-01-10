@@ -143,9 +143,13 @@ const VinylWidget = {
 
             if (error || !data) {
                 console.warn("Vinyl: Keys missing. Using Dummy Mode.");
-                const dummyId = DUMMY_LIBRARY[query.toLowerCase()];
-                if (dummyId) {
-                    this.updatePlayer(dummyId, true);
+
+                // Fuzzy Match
+                const lowerQ = query.toLowerCase();
+                const matchedKey = Object.keys(DUMMY_LIBRARY).find(k => lowerQ.includes(k));
+
+                if (matchedKey) {
+                    this.updatePlayer(DUMMY_LIBRARY[matchedKey], true);
                     return;
                 } else {
                     alert("DUMMY MODE ACTIVE: Keys not found.\nTry searching: 'lofi', 'rock', 'anime', 'jazz', 'rick'");
