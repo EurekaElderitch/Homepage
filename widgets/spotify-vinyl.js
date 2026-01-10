@@ -40,23 +40,29 @@ const VinylWidget = {
     render() {
         const container = document.createElement('div');
         container.className = 'vinyl-widget';
+        // Note: Panel is now integrated next to disc
         container.innerHTML = `
             <div class="vinyl-disc spinning" id="vinylDisc"></div>
             
             <div class="vinyl-panel">
-                <div class="spotify-embed-container">
-                    <iframe id="spotifyFrame" src="https://open.spotify.com/embed/track/${this.state.trackId}?utm_source=generator&theme=0" 
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                <div class="panel-content">
+                    <div class="guest-msg" id="guestMsg">Login to Search</div>
+                    
+                    <div class="search-container logged-in" id="searchBox" style="display:none;">
+                        <input type="text" class="search-input" placeholder="Search track...">
+                    </div>
+                    
+                    <div class="spotify-embed-container">
+                        <iframe id="spotifyFrame" src="https://open.spotify.com/embed/track/${this.state.trackId}?utm_source=generator&theme=0" 
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    </div>
                 </div>
-                <div class="guest-msg" id="guestMsg">Login to Search</div>
-            </div>
-
-            <!-- Search Overlay (Only visible on hover + login) -->
-            <div class="search-container" id="searchBox">
-                <input type="text" class="search-input" placeholder="Search song...">
             </div>
         `;
         document.body.appendChild(container);
+
+        // Remove old style check auth immediately after render
+        this.checkAuth();
     },
 
     async checkAuth() {
@@ -78,8 +84,10 @@ const VinylWidget = {
 
     setupGuestMode() {
         console.log("Vinyl: Guest Mode");
-        document.getElementById('searchBox').classList.remove('logged-in');
-        document.getElementById('guestMsg').classList.add('show');
+        const sBox = document.getElementById('searchBox');
+        const gMsg = document.getElementById('guestMsg');
+        if (sBox) sBox.style.display = 'none';
+        if (gMsg) gMsg.style.display = 'block';
 
         // Load from LocalStorage
         const localTrack = localStorage.getItem('vinyl_last_track');
@@ -90,8 +98,10 @@ const VinylWidget = {
 
     async setupUserMode(user) {
         console.log("Vinyl: User Mode");
-        document.getElementById('searchBox').classList.add('logged-in');
-        document.getElementById('guestMsg').classList.remove('show');
+        const sBox = document.getElementById('searchBox');
+        const gMsg = document.getElementById('guestMsg');
+        if (sBox) sBox.style.display = 'block';
+        if (gMsg) gMsg.style.display = 'none';
 
         // Load from DB Profile
         try {

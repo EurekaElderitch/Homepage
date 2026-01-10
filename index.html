@@ -27,7 +27,9 @@
 
     <!-- Header -->
     <header
-        class="w-full max-w-[1600px] mx-auto px-4 md:px-12 py-6 md:py-8 flex justify-between items-center md:items-start select-none relative z-50">
+        class="w-full max-w-[1600px] mx-auto px-4 md:px-12 py-4 md:py-5 flex justify-between items-center md:items-start select-none relative z-50">
+
+        <!-- ... (content skipped for brevity, targeting header specifically by line range would be safer but let's try to match blocks) ... -->
 
         <!-- Left: Status -->
         <div class="flex flex-col gap-1">
@@ -208,14 +210,14 @@
     <main class="flex-grow flex flex-col items-center justify-center w-full max-w-[1000px] mx-auto px-6 pb-12">
 
         <!-- Clock -->
-        <div class="text-center mb-8 md:mb-10">
+        <div class="text-center mb-4 md:mb-6">
             <h1 id="clock"
-                class="text-[4rem] md:text-[7rem] font-light leading-none tracking-tight text-gray-800 dark:text-white font-[200]">
+                class="text-[3.5rem] md:text-[5rem] font-light leading-none tracking-tight text-gray-800 dark:text-white font-[200]">
                 09<span class="animate-pulse text-gray-300 mx-1">:</span>41
             </h1>
-            <div class="flex items-center justify-center gap-6 mt-4">
+            <div class="flex items-center justify-center gap-6 mt-2">
                 <div class="h-[1px] w-12 bg-gray-200 dark:bg-gray-800"></div>
-                <p id="date" class="text-sm font-bold tracking-[0.3em] text-gray-500 dark:text-gray-400 uppercase">
+                <p id="date" class="text-xs font-bold tracking-[0.3em] text-gray-500 dark:text-gray-400 uppercase">
                     TUESDAY / OCT 24
                 </p>
                 <div class="h-[1px] w-12 bg-gray-200 dark:bg-gray-800"></div>
@@ -223,7 +225,7 @@
         </div>
 
         <!-- Search -->
-        <div class="w-full max-w-lg mb-12 md:mb-16 relative group px-4 md:px-0">
+        <div class="w-full max-w-lg mb-8 md:mb-10 relative group px-4 md:px-0">
             <form action="https://www.google.com/search" method="GET" id="search-form">
                 <input type="text" name="q" id="search-input" placeholder="Search..." autocomplete="off"
                     class="search-input w-full h-11 md:h-12 pl-8 pr-12 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111] text-gray-800 dark:text-gray-200 text-xs focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 transition-all placeholder-gray-400">
@@ -233,20 +235,18 @@
         </div>
 
         <!-- Links Grid -->
-        <div id="grid-container" class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div id="grid-container" class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <!-- JS Injected -->
         </div>
 
-        <!-- Edit Mode (At bottom of page flow) -->
-        <div class="w-full flex justify-end mt-16 mb-4 px-2">
-            <button id="edit-fab"
-                class="size-8 flex items-center justify-center rounded-full glass-fab text-white shadow-lg shadow-black/10 hover:scale-110 transition-transform active:scale-95 group">
-                <span class="material-symbols-outlined text-[16px] group-[.is-editing]:hidden">edit</span>
-                <span class="material-symbols-outlined text-[16px] hidden group-[.is-editing]:block">check</span>
-            </button>
-        </div>
-
     </main>
+
+    <!-- Fixed Edit FAB -->
+    <button id="edit-fab"
+        class="fixed bottom-6 right-6 size-10 flex items-center justify-center rounded-full glass-fab text-white shadow-lg shadow-black/10 hover:scale-110 transition-transform active:scale-95 group z-50">
+        <span class="material-symbols-outlined text-[20px] group-[.is-editing]:hidden">edit</span>
+        <span class="material-symbols-outlined text-[20px] hidden group-[.is-editing]:block">check</span>
+    </button>
 
 
     <!-- Game Overlay -->
