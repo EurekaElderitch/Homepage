@@ -206,6 +206,42 @@ function setSyncStatus(status) {
     }
 }
 
+// Perform Database Sync (Used for lazy/on-demand sync)
+async function performDatabaseSync(userId) {
+    console.log('Background sync starting...');
+    try {
+        const { data, error } = await db.from('user_profiles').select('shortcuts').eq('id', userId).single();
+
+        if (error && error.code === 'PGRST116') {
+            // User profile doesn't exist yet, create it
+            console.log('Creating new user profile...');
+            await db.from('user_profiles').insert({
+                id: userId,
+                shortcuts: defaultCategories,
+                updated_at: new Date()
+            });
+            console.log('Profile created');
+        } else if (data && data.shortcuts) {
+            // Check if data is different
+            const currentStr = JSON.stringify(categories);
+            const cloudStr = JSON.stringify(data.shortcuts);
+            if (currentStr !== cloudStr) {
+                console.log('Updating from cloud...');
+                categories = data.shortcuts;
+                localStorage.setItem('dashboardCategories', JSON.stringify(categories));
+                render();
+                // Flash green to show update
+                document.body.classList.add('flash-update');
+                setTimeout(() => document.body.classList.remove('flash-update'), 500);
+            } else {
+                console.log('Data already up-to-date');
+            }
+        }
+    } catch (err) {
+        console.error('Background Sync Error:', err);
+    }
+}
+
 async function forceSync() {
     const { data: { session } } = await db.auth.getSession();
     if (!session || !session.user) {
@@ -214,19 +250,8 @@ async function forceSync() {
     }
 
     setSyncStatus('syncing');
-    try {
-        const { data } = await db.from('user_profiles').select('shortcuts').eq('id', session.user.id).single();
-        if (data && data.shortcuts) {
-            categories = data.shortcuts;
-            localStorage.setItem('dashboardCategories', JSON.stringify(categories));
-            render();
-            setSyncStatus('synced');
-            console.log('Force Sync Complete');
-        }
-    } catch (e) {
-        console.error('Force Sync Failed:', e);
-        setSyncStatus('offline');
-    }
+    await performDatabaseSync(session.user.id);
+    setSyncStatus('synced');
 }
 
 let isSaving = false; // Save Queue Lock
@@ -1138,35 +1163,28 @@ function initAuth() {
                 }
             };
 
-            // Sync Shortcuts (Initial Load)
-            setSyncStatus('syncing');
+            // Quick Load from Cache (Instant)
             try {
-                const { data, error } = await db.from('user_profiles').select('shortcuts').eq('id', user.id).single();
-
-                if (error && error.code === 'PGRST116') {
-                    // User profile doesn't exist yet, create it
-                    console.log('Creating new user profile...');
-                    await db.from('user_profiles').insert({
-                        id: user.id,
-                        shortcuts: defaultCategories,
-                        updated_at: new Date()
-                    });
-                    categories = JSON.parse(JSON.stringify(defaultCategories));
-                    localStorage.setItem('dashboardCategories', JSON.stringify(categories));
+                const saved = localStorage.getItem('dashboardCategories');
+                if (saved) {
+                    categories = JSON.parse(saved);
                     render();
-                    setSyncStatus('synced');
-                } else if (data && data.shortcuts) {
-                    categories = data.shortcuts;
-                    localStorage.setItem('dashboardCategories', JSON.stringify(categories));
-                    render();
-                    setSyncStatus('synced');
-                } else {
-                    setSyncStatus('synced'); // No data yet, but connected
                 }
-            } catch (err) {
-                console.error('Initial Sync Error:', err);
-                setSyncStatus('offline');
+            } catch (e) {
+                categories = JSON.parse(JSON.stringify(defaultCategories));
+                render();
             }
+
+            // Set LED to synced immediately (optimistic)
+            setSyncStatus('synced');
+
+            // Lazy Background Sync (after 3 seconds idle)
+            let backgroundSyncTimer = setTimeout(async () => {
+                await performDatabaseSync(user.id);
+            }, 3000);
+
+            // Store sync function for on-demand use
+            window.forceDatabaseSync = () => performDatabaseSync(user.id);
 
             // Realtime Sync (Live Updates)
             const channel = db.channel('custom-all-channel')
