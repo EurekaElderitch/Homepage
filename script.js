@@ -988,13 +988,21 @@ function initAuth() {
 
             // Override Click for Logout
             authBtn.onclick = async () => {
-                authBtn.innerText = "...";
+                authBtn.innerText = "LOGGING OUT...";
                 try {
+                    // 1. API SignOut
                     await db.auth.signOut();
-                    window.location.reload();
                 } catch (e) {
-                    console.error("SignOut Failed:", e);
-                    alert("Logout failed. See console.");
+                    console.warn("API Signout Issue (ignoring):", e);
+                } finally {
+                    // 2. FORCE CLEAR Local Storage (Nuclear Option)
+                    // Remove Supabase Auth Token manually to ensure "unstuck"
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('sb-')) localStorage.removeItem(key);
+                    });
+
+                    // 3. Reload
+                    window.location.reload();
                 }
             };
 
