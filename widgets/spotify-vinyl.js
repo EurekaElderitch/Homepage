@@ -26,15 +26,22 @@ const VinylWidget = {
         this.render();
         this.checkAuth();
 
-        // Input Listener
-        const input = document.querySelector('.search-input');
-        if (input) {
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.handleSearch(e.target.value);
-                }
-            });
-        }
+        // Input Listener - Scoped to Widget
+        // Use timeout to ensure DOM is ready if needed, though render is sync.
+        setTimeout(() => {
+            const input = document.querySelector('.vinyl-search-input');
+            if (input) {
+                console.log("Vinyl: Search Listener Attached");
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        console.log("Vinyl: Enter pressed", e.target.value);
+                        this.handleSearch(e.target.value);
+                    }
+                });
+            } else {
+                console.error("Vinyl: Search Input NOT found");
+            }
+        }, 100);
     },
 
     render() {
@@ -49,7 +56,7 @@ const VinylWidget = {
                     <div class="guest-msg" id="guestMsg">Login to Search</div>
                     
                     <div class="search-container logged-in" id="searchBox" style="display:none;">
-                        <input type="text" class="search-input" placeholder="Search track...">
+                        <input type="text" class="vinyl-search-input" placeholder="Search track...">
                     </div>
                     
                     <div class="spotify-embed-container">
