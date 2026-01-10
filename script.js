@@ -193,6 +193,8 @@ async function save() {
     // Sync to Supabase if logged in
     const { data: { session } } = await db.auth.getSession();
     if (session && session.user) {
+        // Visual Feedback (Cursor wait)
+        document.body.style.cursor = 'wait';
         try {
             const { error } = await db
                 .from('user_profiles')
@@ -201,9 +203,13 @@ async function save() {
                     shortcuts: categories,
                     updated_at: new Date()
                 });
-            if (error) console.error("Supabase Save Error:", error);
+            if (error) throw error;
+            console.log("Cloud Save Complete");
         } catch (e) {
-            console.error("Supabase Sync Failed:", e);
+            console.error("Supabase Save Failed:", e);
+            alert("Sync Failed: Check Internet Connection");
+        } finally {
+            document.body.style.cursor = 'default';
         }
     }
 }
