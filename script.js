@@ -1012,7 +1012,7 @@ function initAuth() {
                 }
             };
 
-            // Sync Shortcuts
+            // Sync Shortcuts (Initial Load)
             try {
                 const { data } = await db.from('user_profiles').select('shortcuts').eq('id', user.id).single();
                 if (data && data.shortcuts) {
@@ -1020,6 +1020,24 @@ function initAuth() {
                     render();
                 }
             } catch (err) { }
+
+            // Realtime Sync (Live Updates)
+            const channel = db.channel('custom-all-channel')
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `id=eq.${user.id}` },
+                    (payload) => {
+                        console.log('Realtime Update:', payload);
+                        if (payload.new && payload.new.shortcuts) {
+                            categories = payload.new.shortcuts;
+                            render();
+                            document.body.classList.add('flash-update');
+                            setTimeout(() => document.body.classList.remove('flash-update'), 500);
+                        }
+                    }
+                )
+                .subscribe();
+
         } else {
             // Reset to Guest
             userName.innerText = "GUEST";
